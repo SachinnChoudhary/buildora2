@@ -19,6 +19,14 @@ interface BuildoraBotProps {
 }
 
 const SUGGESTED_QUESTIONS: Record<string, string[]> = {
+  global: [
+    'What is Buildora?',
+    'How do I buy a project?',
+    'Can I use these for my final year project?',
+    'What do I get after purchase?',
+    'How do I deploy my project?',
+    'Are these projects verified?',
+  ],
   neurohire: [
     'How do I set up the resume parser?',
     'What AI model does the semantic search use?',
@@ -67,7 +75,7 @@ export default function BuildoraBot({ currentProject: propCurrentProject }: Buil
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
+  const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>(SUGGESTED_QUESTIONS.global);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const [currentProject, setCurrentProject] = useState(propCurrentProject);
@@ -77,7 +85,7 @@ export default function BuildoraBot({ currentProject: propCurrentProject }: Buil
     // If project is passed as prop, use that
     if (propCurrentProject) {
       setCurrentProject(propCurrentProject);
-      setSuggestedQuestions(SUGGESTED_QUESTIONS[propCurrentProject.id] || []);
+      setSuggestedQuestions(SUGGESTED_QUESTIONS[propCurrentProject.id] || SUGGESTED_QUESTIONS.global);
       return;
     }
 
@@ -92,8 +100,14 @@ export default function BuildoraBot({ currentProject: propCurrentProject }: Buil
           title: project.title,
           techStack: project.techStack,
         });
-        setSuggestedQuestions(SUGGESTED_QUESTIONS[projectId] || []);
+        setSuggestedQuestions(SUGGESTED_QUESTIONS[projectId] || SUGGESTED_QUESTIONS.global);
+      } else {
+        setCurrentProject(undefined);
+        setSuggestedQuestions(SUGGESTED_QUESTIONS.global);
       }
+    } else {
+      setCurrentProject(undefined);
+      setSuggestedQuestions(SUGGESTED_QUESTIONS.global);
     }
   }, [pathname, propCurrentProject]);
 
@@ -105,12 +119,14 @@ export default function BuildoraBot({ currentProject: propCurrentProject }: Buil
     scrollToBottom();
   }, [messages, isLoading, isMinimized]);
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+  const handleSend = async (messageToSend?: string) => {
+    const text = messageToSend || input.trim();
+    if (!text || isLoading) return;
 
-    const userMessage: Message = { role: 'user', parts: [{ text: input.trim() }] };
+    if (!messageToSend) setInput('');
+    
+    const userMessage: Message = { role: 'user', parts: [{ text }] };
     setMessages((prev) => [...prev, userMessage]);
-    setInput('');
     setIsLoading(true);
 
     try {
@@ -118,7 +134,7 @@ export default function BuildoraBot({ currentProject: propCurrentProject }: Buil
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: input,
+          message: text,
           history: messages,
           projectContext: currentProject,
         }),
@@ -131,37 +147,14 @@ export default function BuildoraBot({ currentProject: propCurrentProject }: Buil
         setMessages((prev) => [...prev, { role: 'model', parts: [{ text: `Error: ${data.error}` }] }]);
       }
     } catch (err) {
-      setMessages((prev) => [...prev, { role: 'model', parts: [{ text: "Failed to connect to the AI mentor. Check your internet connection." }] }]);
+      setMessages((prev) => [...prev, { role: 'model', parts: [{ text: "I'm having trouble connecting to my knowledge base. Please check your connection." }] }]);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleSuggestedQuestion = (question: string) => {
-    setInput(question);
-    // Auto-send after a brief delay
-    setTimeout(() => {
-      setMessages((prev) => [...prev, { role: 'user', parts: [{ text: question }] }]);
-      setInput('');
-      setIsLoading(true);
-
-      fetch('/api/bot', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: question,
-          history: messages,
-          projectContext: currentProject,
-        }),
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.text) {
-            setMessages((prev) => [...prev, { role: 'model', parts: [{ text: data.text }] }]);
-          }
-        })
-        .finally(() => setIsLoading(false));
-    }, 200);
+    handleSend(question);
   };
 
   return (
@@ -264,7 +257,7 @@ export default function BuildoraBot({ currentProject: propCurrentProject }: Buil
                         </p>
                         
                         {/* Suggested Questions */}
-                        {currentProject && suggestedQuestions.length > 0 && (
+                        {suggestedQuestions.length > 0 && (
                           <div className="w-full space-y-2 text-left">
                             <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest flex items-center gap-2 mb-3">
                               <Lightbulb className="w-3 h-3" /> Suggested Questions
@@ -311,7 +304,7 @@ export default function BuildoraBot({ currentProject: propCurrentProject }: Buil
                     )}
                     <div ref={messagesEndRef} />
                   </div>
-
+ 
                   {/* Input Area */}
                   <div className="p-4 border-t border-white/10">
                     <div className="relative">
@@ -324,7 +317,7 @@ export default function BuildoraBot({ currentProject: propCurrentProject }: Buil
                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-purple/50 pr-12 transition-all"
                       />
                       <button
-                        onClick={handleSend}
+                        onClick={() => handleSend()}
                         disabled={!input.trim() || isLoading}
                         className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-brand-purple flex items-center justify-center text-white disabled:opacity-50 hover:bg-brand-orange transition-colors"
                       >
