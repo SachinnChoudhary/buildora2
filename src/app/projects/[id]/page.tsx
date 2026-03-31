@@ -7,6 +7,7 @@ import CheckoutButton from '@/components/CheckoutButton';
 import Toast from '@/components/Toast';
 import BuildoraBot from '@/components/BuildoraBot';
 import FileExplorer from '@/components/FileExplorer';
+import ReviewsSection from '@/components/ReviewsSection';
 import { notFound } from 'next/navigation';
 
 export default function ProjectDetail() {
@@ -211,6 +212,15 @@ export default function ProjectDetail() {
                   <span className="text-xs text-gray-400">{item}</span>
                 </div>
               ))}
+            </div>
+            
+            <ReviewsSection projectId={id} />
+
+            {/* Footer Navigation */}
+            <div className="mt-12 pt-8 border-t border-white/10 flex justify-between items-center">
+              <Link href="/projects" className="text-gray-400 hover:text-white transition-colors text-sm flex items-center gap-2">
+                ← Back to Projects
+              </Link>
             </div>
           </div>
         </div>
