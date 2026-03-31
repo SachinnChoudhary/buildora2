@@ -25,10 +25,25 @@ export default function AdminPanel() {
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   // Live Subscriptions - Only enable once authorized
+  // Live Subscriptions
   const { data: liveOrders } = useFirestoreRealtime('orders', [], { enabled: !!isAuthorized });
   const { data: liveRequests } = useFirestoreRealtime('project_requests', [], { enabled: !!isAuthorized });
   const { data: liveUsers } = useFirestoreRealtime('users', [], { enabled: !!isAuthorized });
-  const { data: liveProjects } = useFirestoreRealtime('projects', [], { enabled: !!isAuthorized });
+  const [liveProjects, setLiveProjects] = useState<any[]>([]);
+
+  const fetchSupabaseProjects = async () => {
+    try {
+      const res = await fetch('/api/projects');
+      const data = await res.json();
+      if (data.success) setLiveProjects(data.data);
+    } catch (err) {
+      console.error('Failed to sync with Supabase catalog', err);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthorized) fetchSupabaseProjects();
+  }, [isAuthorized]);
 
   // Project Management State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -184,6 +199,7 @@ export default function AdminPanel() {
         await createSupabaseProject(projectPayload);
       }
       setIsModalOpen(false);
+      await fetchSupabaseProjects(); // Real-time refresh
     } catch (err: any) {
       console.error('Error saving project to Supabase:', err);
       alert(`Failed to save: ${err.message || 'Check your Supabase configuration'}`);
