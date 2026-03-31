@@ -1,0 +1,59 @@
+
+# Debug
+# Dependencies
+# Environment Variables - NEVER COMMIT
+# Firebase
+# IDE
+# Local env files
+# Lock files (optional - uncomment if using lock file)
+# Misc
+# Next.js Build Artifacts
+# OS
+# Production Build
+# Stripe test data
+# Temporary files
+# Testing
+# Vercel
+# package-lock.json
+# pnpm-lock.yaml
+# yarn.lock
+*.log
+*.pem
+*.sublime-project
+*.sublime-workspace
+*.swo
+*.swp
+*.temp
+*.tmp
+*~
+.DS_Store
+.cache/
+.classpath
+.env
+.env*.local
+.env.*.local
+.env.local
+.env.local.backup
+.env.production.local
+.env.test.local
+.firebase/
+.firebaserc
+.idea/
+.next/
+.npm-cache/
+.pnp.js
+.project
+.stripe-test-config
+.vercel
+.vscode/
+/.next/
+/.pnp
+/build
+/coverage
+/dist
+/out/
+Thumbs.db
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
