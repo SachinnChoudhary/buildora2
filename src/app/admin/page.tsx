@@ -239,7 +239,7 @@ export default function AdminPanel() {
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
-          <div className="relative w-full max-w-2xl glassmorphism border border-white/10 rounded-2xl p-8 shadow-2xl">
+          <div className="relative w-full max-w-2xl glassmorphism border border-white/10 rounded-2xl p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold text-white mb-6 uppercase tracking-tight">
               {modalMode === 'edit' ? 'Edit Project' : 'Add New Project'}
             </h2>
