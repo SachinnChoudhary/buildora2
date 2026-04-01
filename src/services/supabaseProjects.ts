@@ -42,10 +42,11 @@ export async function createSupabaseProject(projectData: any) {
   }
 
   // 2. Insert into Postgres with owner_id set to current user
-  const { sourceFile, thumbnailFile, techStack, tags, originalPrice, externalRepoUrl, repoUrl: _repoUrl, ...rest } = projectData;
-  // Remove externalRepoUrl and repoUrl from rest if present
+  const { sourceFile, thumbnailFile, techStack, tags, originalPrice, externalRepoUrl, repoUrl: _repoUrl, sourceType, ...rest } = projectData;
+  // Remove externalRepoUrl, repoUrl, and sourceType from rest if present
   if ('externalRepoUrl' in rest) delete rest.externalRepoUrl;
   if ('repoUrl' in rest) delete rest.repoUrl;
+  if ('sourceType' in rest) delete rest.sourceType;
   const { data, error } = await supabase
     .from('projects')
     .insert([{
@@ -71,10 +72,12 @@ export async function updateSupabaseProject(projectId: string, projectData: any)
   const currentUser = auth.currentUser;
   if (!currentUser) throw new Error('User must be authenticated to update a project');
 
-  const { sourceFile, thumbnailFile, techStack, tags, originalPrice, externalRepoUrl, repoUrl: _repoUrl, ...rest } = projectData;
-  // Remove externalRepoUrl and repoUrl from rest if present
+  // Remove sourceType from destructuring
+  const { sourceFile, thumbnailFile, techStack, tags, originalPrice, externalRepoUrl, repoUrl: _repoUrl, sourceType, ...rest } = projectData;
+  // Remove externalRepoUrl, repoUrl, and sourceType from rest if present
   if ('externalRepoUrl' in rest) delete rest.externalRepoUrl;
   if ('repoUrl' in rest) delete rest.repoUrl;
+  if ('sourceType' in rest) delete rest.sourceType;
   let thumbnailUrl = projectData.thumbnailUrl;
   let sourceUrl = projectData.sourceUrl || '';
   let repoUrl = projectData.repoUrl || '';
@@ -126,4 +129,18 @@ export async function getAllSupabaseProjects() {
 
   if (error) throw error;
   return data;
+}
+
+export async function getAllSupabaseProjectsAsTable() {
+  const { data, error } = await supabase
+    .from('projects')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  if (!data || data.length === 0) return { columns: [], rows: [] };
+
+  const columns = Object.keys(data[0]);
+  const rows = data.map(project => columns.map(col => project[col]));
+  return { columns, rows };
 }
