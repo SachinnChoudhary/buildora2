@@ -1,4 +1,5 @@
 import { supabase, getPublicUrl } from '@/lib/supabase';
+import { auth } from '@/lib/firebase';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function uploadToSupabaseBucket(file: File, folder: string, projectId: string) {
@@ -20,6 +21,9 @@ export async function uploadToSupabaseBucket(file: File, folder: string, project
 
 export async function createSupabaseProject(projectData: any) {
   const projectId = uuidv4();
+  const currentUser = auth.currentUser;
+  if (!currentUser) throw new Error('User must be authenticated to create a project');
+
   let thumbnailUrl = '';
   let sourceUrl = projectData.externalRepoUrl || '';
 
@@ -32,13 +36,14 @@ export async function createSupabaseProject(projectData: any) {
     sourceUrl = await uploadToSupabaseBucket(projectData.sourceFile, 'source', projectId);
   }
 
-  // 2. Insert into Postgres
+  // 2. Insert into Postgres with owner_id set to current user
   const { sourceFile, thumbnailFile, techStack, tags, ...rest } = projectData;
   const { data, error } = await supabase
     .from('projects')
     .insert([{
       ...rest,
       id: projectId,
+      owner_id: currentUser.uid,
       thumbnail_url: thumbnailUrl,
       source_url: sourceUrl,
       tech_stack: techStack,
@@ -53,6 +58,9 @@ export async function createSupabaseProject(projectData: any) {
 }
 
 export async function updateSupabaseProject(projectId: string, projectData: any) {
+  const currentUser = auth.currentUser;
+  if (!currentUser) throw new Error('User must be authenticated to update a project');
+
   const { sourceFile, thumbnailFile, techStack, tags, ...rest } = projectData;
   let thumbnailUrl = projectData.thumbnailUrl;
   let sourceUrl = projectData.sourceUrl || projectData.externalRepoUrl;

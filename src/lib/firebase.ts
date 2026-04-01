@@ -79,3 +79,18 @@ if (missingVars.length === 0) {
 }
 
 export { app, auth, db, storage, analytics };
+
+/* SQL Code Changes
+-- Drop the old permissive policy
+drop policy if exists "Admins can manage projects" on projects;
+
+-- New policy: Authenticated users can insert/update their own projects
+create policy "Users can manage their own projects"
+on projects for all
+to authenticated
+using (owner_id = auth.uid())
+with check (owner_id = auth.uid());
+
+-- Allow public read (keep existing)
+-- Already exists: "Public projects are viewable by everyone"
+*/
