@@ -25,7 +25,7 @@ export async function createSupabaseProject(projectData: any) {
   if (!currentUser) throw new Error('User must be authenticated to create a project');
 
   let thumbnailUrl = '';
-  let sourceUrl = projectData.externalRepoUrl || '';
+  let sourceUrl = '';
 
   // 1. Upload files if they exist
   if (projectData.thumbnailFile) {
@@ -37,15 +37,16 @@ export async function createSupabaseProject(projectData: any) {
   }
 
   // 2. Insert into Postgres with owner_id set to current user
-  const { sourceFile, thumbnailFile, techStack, tags, ...rest } = projectData;
+  const { sourceFile, thumbnailFile, techStack, tags, originalPrice, externalRepoUrl, ...rest } = projectData;
   const { data, error } = await supabase
     .from('projects')
     .insert([{
       ...rest,
       id: projectId,
       owner_id: currentUser.uid,
+      original_price: originalPrice || rest.price || 0,
       thumbnail_url: thumbnailUrl,
-      source_url: sourceUrl,
+      source_url: sourceUrl || externalRepoUrl || '',
       tech_stack: techStack,
       tags: tags,
       visibility: 'public',
@@ -61,9 +62,9 @@ export async function updateSupabaseProject(projectId: string, projectData: any)
   const currentUser = auth.currentUser;
   if (!currentUser) throw new Error('User must be authenticated to update a project');
 
-  const { sourceFile, thumbnailFile, techStack, tags, ...rest } = projectData;
+  const { sourceFile, thumbnailFile, techStack, tags, originalPrice, externalRepoUrl, ...rest } = projectData;
   let thumbnailUrl = projectData.thumbnailUrl;
-  let sourceUrl = projectData.sourceUrl || projectData.externalRepoUrl;
+  let sourceUrl = projectData.sourceUrl || '';
 
   if (thumbnailFile) {
     thumbnailUrl = await uploadToSupabaseBucket(thumbnailFile, 'thumbnail', projectId);
@@ -77,10 +78,11 @@ export async function updateSupabaseProject(projectId: string, projectData: any)
     .from('projects')
     .update({
       ...rest,
+      original_price: originalPrice || rest.price || 0,
       tech_stack: techStack,
       tags: tags,
       thumbnail_url: thumbnailUrl,
-      source_url: sourceUrl,
+      source_url: sourceUrl || externalRepoUrl || '',
       updated_at: new Date().toISOString()
     })
     .eq('id', projectId)
