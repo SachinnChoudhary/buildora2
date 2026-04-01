@@ -1,6 +1,7 @@
 import { supabase, getPublicUrl } from '@/lib/supabase';
 import { auth } from '@/lib/firebase';
 import { v4 as uuidv4 } from 'uuid';
+import { validate as isUuid } from 'uuid';
 
 export async function uploadToSupabaseBucket(file: File, folder: string, projectId: string) {
   const fileExt = file.name.split('.').pop();
@@ -21,6 +22,9 @@ export async function uploadToSupabaseBucket(file: File, folder: string, project
 
 export async function createSupabaseProject(projectData: any) {
   const projectId = uuidv4();
+  if (!isUuid(projectId)) {
+    throw new Error(`Invalid UUID: ${projectId}`);
+  }
   const currentUser = auth.currentUser;
   if (!currentUser) throw new Error('User must be authenticated to create a project');
 
@@ -69,6 +73,9 @@ export async function createSupabaseProject(projectData: any) {
 }
 
 export async function updateSupabaseProject(projectId: string, projectData: any) {
+  if (!isUuid(projectId)) {
+    throw new Error(`Invalid UUID: ${projectId}`);
+  }
   const currentUser = auth.currentUser;
   if (!currentUser) throw new Error('User must be authenticated to update a project');
 
