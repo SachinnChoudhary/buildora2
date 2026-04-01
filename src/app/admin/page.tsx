@@ -16,6 +16,10 @@ const statusColors: Record<string, string> = {
   in_progress: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
 };
 
+const DOMAINS = ['Web Development', 'Mobile App', 'AI / Machine Learning', 'Data Science', 'Blockchain', 'Cybersecurity', 'Cloud Computing', 'IoT'];
+const TECH_STACKS = ['React', 'Next.js', 'Node.js', 'Python', 'Go', 'Firebase', 'Supabase', 'Tailwind CSS', 'MongoDB', 'PostgreSQL', 'Flutter', 'React Native'];
+const TAGS = ['Fullstack', 'Frontend', 'Backend', 'Mini Project', 'Major Project', 'SaaS', 'Automation', 'Real-time'];
+
 export default function AdminPanel() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -65,6 +69,15 @@ export default function AdminPanel() {
     thumbnailFile: null as File | null
   });
   const [isUploading, setIsUploading] = useState(false);
+
+  const toggleValue = (field: 'techStack' | 'tags', value: string) => {
+    const currentValues = formData[field].split(',').map(v => v.trim()).filter(Boolean);
+    if (currentValues.includes(value)) {
+      setFormData({ ...formData, [field]: currentValues.filter(v => v !== value).join(', ') });
+    } else {
+      setFormData({ ...formData, [field]: [...currentValues, value].join(', ') });
+    }
+  };
 
   useEffect(() => {
     async function checkAccess() {
@@ -238,7 +251,23 @@ export default function AdminPanel() {
                 </div>
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Domain</label>
-                  <input required value={formData.domain} onChange={e => setFormData({...formData, domain: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-sm text-white" />
+                  <input required value={formData.domain} onChange={e => setFormData({...formData, domain: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-brand-purple/50 transition-colors" />
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {DOMAINS.map(d => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, domain: d })}
+                        className={`px-2 py-1 rounded-md text-[10px] font-medium transition-all border ${
+                          formData.domain === d 
+                            ? 'bg-brand-purple/20 border-brand-purple/40 text-brand-purple' 
+                            : 'bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        {d}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div className="md:col-span-2">
                   <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Subtitle</label>
@@ -261,11 +290,43 @@ export default function AdminPanel() {
                 </div>
                 <div className="md:col-span-2">
                   <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Tech Stack (comma separated)</label>
-                  <input required value={formData.techStack} onChange={e => setFormData({...formData, techStack: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-sm text-white" placeholder="React, Next.js, Firebase..." />
+                  <input required value={formData.techStack} onChange={e => setFormData({...formData, techStack: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-brand-purple/50 transition-colors" placeholder="React, Next.js, Firebase..." />
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {TECH_STACKS.map(t => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => toggleValue('techStack', t)}
+                        className={`px-2 py-1 rounded-md text-[10px] font-medium transition-all border ${
+                          formData.techStack.includes(t)
+                            ? 'bg-brand-orange/20 border-brand-orange/40 text-brand-orange' 
+                            : 'bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div className="md:col-span-2">
                   <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Tags (comma separated)</label>
-                  <input required value={formData.tags} onChange={e => setFormData({...formData, tags: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-sm text-white" placeholder="Fullstack, AI, Automation..." />
+                  <input required value={formData.tags} onChange={e => setFormData({...formData, tags: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-brand-purple/50 transition-colors" placeholder="Fullstack, AI, Automation..." />
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {TAGS.map(t => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => toggleValue('tags', t)}
+                        className={`px-2 py-1 rounded-md text-[10px] font-medium transition-all border ${
+                          formData.tags.includes(t)
+                            ? 'bg-brand-purple/20 border-brand-purple/40 text-brand-purple' 
+                            : 'bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Source Selection */}
