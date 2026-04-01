@@ -26,8 +26,9 @@ export async function createSupabaseProject(projectData: any) {
 
   let thumbnailUrl = '';
   let sourceUrl = '';
+  let repoUrl = '';
 
-  // 1. Upload files if they exist
+  // 1. Upload files if they exist (all optional)
   if (projectData.thumbnailFile) {
     thumbnailUrl = await uploadToSupabaseBucket(projectData.thumbnailFile, 'thumbnail', projectId);
   }
@@ -36,8 +37,15 @@ export async function createSupabaseProject(projectData: any) {
     sourceUrl = await uploadToSupabaseBucket(projectData.sourceFile, 'source', projectId);
   }
 
+  if (projectData.repoUrl) {
+    repoUrl = projectData.repoUrl;
+  }
+
   // 2. Insert into Postgres with owner_id set to current user
-  const { sourceFile, thumbnailFile, techStack, tags, originalPrice, externalRepoUrl, ...rest } = projectData;
+  const { sourceFile, thumbnailFile, techStack, tags, originalPrice, externalRepoUrl, repoUrl: _repoUrl, ...rest } = projectData;
+  // Remove externalRepoUrl and repoUrl from rest if present
+  if ('externalRepoUrl' in rest) delete rest.externalRepoUrl;
+  if ('repoUrl' in rest) delete rest.repoUrl;
   const { data, error } = await supabase
     .from('projects')
     .insert([{
@@ -45,8 +53,9 @@ export async function createSupabaseProject(projectData: any) {
       id: projectId,
       owner_id: currentUser.uid,
       original_price: originalPrice || rest.price || 0,
-      thumbnail_url: thumbnailUrl,
-      source_url: sourceUrl || externalRepoUrl || '',
+      thumbnail_url: thumbnailUrl || null,
+      source_url: sourceUrl || '',
+      repo_url: repoUrl || '',
       tech_stack: techStack,
       tags: tags,
       visibility: 'public',
@@ -62,9 +71,13 @@ export async function updateSupabaseProject(projectId: string, projectData: any)
   const currentUser = auth.currentUser;
   if (!currentUser) throw new Error('User must be authenticated to update a project');
 
-  const { sourceFile, thumbnailFile, techStack, tags, originalPrice, externalRepoUrl, ...rest } = projectData;
+  const { sourceFile, thumbnailFile, techStack, tags, originalPrice, externalRepoUrl, repoUrl: _repoUrl, ...rest } = projectData;
+  // Remove externalRepoUrl and repoUrl from rest if present
+  if ('externalRepoUrl' in rest) delete rest.externalRepoUrl;
+  if ('repoUrl' in rest) delete rest.repoUrl;
   let thumbnailUrl = projectData.thumbnailUrl;
   let sourceUrl = projectData.sourceUrl || '';
+  let repoUrl = projectData.repoUrl || '';
 
   if (thumbnailFile) {
     thumbnailUrl = await uploadToSupabaseBucket(thumbnailFile, 'thumbnail', projectId);
@@ -81,8 +94,9 @@ export async function updateSupabaseProject(projectId: string, projectData: any)
       original_price: originalPrice || rest.price || 0,
       tech_stack: techStack,
       tags: tags,
-      thumbnail_url: thumbnailUrl,
-      source_url: sourceUrl || externalRepoUrl || '',
+      thumbnail_url: thumbnailUrl || null,
+      source_url: sourceUrl || '',
+      repo_url: repoUrl || '',
       updated_at: new Date().toISOString()
     })
     .eq('id', projectId)
