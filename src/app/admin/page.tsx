@@ -6,7 +6,7 @@ import { PROJECTS_DB } from '@/lib/projects';
 import { useFirestoreRealtime } from '@/hooks/useFirestore';
 import { getUserProfile } from '@/services/firestore';
 
-const TABS = ['Overview', 'Projects', 'Orders', 'Custom Requests', 'Users'] as const;
+const TABS = ['Overview', 'Projects', 'Orders', 'Custom Requests', 'Users', 'Diagnostics'] as const;
 type Tab = (typeof TABS)[number];
 
 const statusColors: Record<string, string> = {
@@ -682,6 +682,120 @@ export default function AdminPanel() {
           </div>
         </div>
       )}
+      {/* ── Diagnostics tab ── */}
+      {tab === 'Diagnostics' && <DiagnosticsPanel />}
     </main>
+  );
+}
+
+function DiagnosticsPanel() {
+  const [results, setResults] = useState<Record<string, { status: 'loading' | 'success' | 'error', message: string }>>({
+    firebase: { status: 'loading', message: 'Checking...' },
+    supabase_db: { status: 'loading', message: 'Checking...' },
+    supabase_storage: { status: 'loading', message: 'Checking...' },
+    gemini: { status: 'loading', message: 'Checking...' },
+  });
+
+  const runAllTests = async () => {
+    setResults({
+      firebase: { status: 'loading', message: 'Checking...' },
+      supabase_db: { status: 'loading', message: 'Checking...' },
+      supabase_storage: { status: 'loading', message: 'Checking...' },
+      gemini: { status: 'loading', message: 'Checking...' },
+    });
+
+    // 1. Firebase Check
+    try {
+      const { db } = await import('@/lib/firebase');
+      const { doc, getDoc, setDoc, serverTimestamp } = await import('firebase/firestore');
+      const testRef = doc(db, 'system_checks', 'health');
+      await setDoc(testRef, { lastCheck: serverTimestamp() }, { merge: true });
+      const snap = await getDoc(testRef);
+      if (snap.exists()) {
+        setResults(prev => ({ ...prev, firebase: { status: 'success', message: 'Firestore Connection OK' } }));
+      }
+    } catch (err: any) {
+      setResults(prev => ({ ...prev, firebase: { status: 'error', message: `Firestore Error: ${err.message}` } }));
+    }
+
+    // 2. Supabase DB Check
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      const { data, error } = await supabase.from('projects').select('id').limit(1);
+      if (error) throw error;
+      setResults(prev => ({ ...prev, supabase_db: { status: 'success', message: `Connected to Projects table (${data.length} records found)` } }));
+    } catch (err: any) {
+      setResults(prev => ({ ...prev, supabase_db: { status: 'error', message: `Supabase DB Error: ${err.message}` } }));
+    }
+
+    // 3. Supabase Storage Check
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      const { data, error } = await supabase.storage.getBucket('projects');
+      if (error) throw error;
+      setResults(prev => ({ ...prev, supabase_storage: { status: 'success', message: `Bucket 'projects' found (Public: ${data.public ? 'YES' : 'NO'})` } }));
+    } catch (err: any) {
+      setResults(prev => ({ ...prev, supabase_storage: { status: 'error', message: `Storage Error: ${err.message}. Ensure bucket 'projects' exists and is Public.` } }));
+    }
+
+    // 4. Gemini AI Check
+    try {
+      const res = await fetch('/api/chat', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'health_check_ping', context: [] }) 
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setResults(prev => ({ ...prev, gemini: { status: 'success', message: 'AI Mentor Response OK' } }));
+    } catch (err: any) {
+      setResults(prev => ({ ...prev, gemini: { status: 'error', message: `AI Error: ${err.message}` } }));
+    }
+  };
+
+  useEffect(() => {
+    runAllTests();
+  }, []);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center mb-10">
+        <div>
+          <h2 className="text-2xl font-bold text-white uppercase tracking-tight mt-16 mt-0">System Health</h2>
+          <p className="text-gray-500 text-xs mt-1">Verify real-time connectivity to all external services.</p>
+        </div>
+        <button onClick={runAllTests} className="btn-gradient px-6 py-2.5 text-[10px] uppercase font-bold tracking-widest">RE-RUN ALL TESTS</button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {Object.entries(results).map(([service, res]) => (
+          <div key={service} className="glassmorphism p-6 rounded-2xl border border-white/5">
+            <div className="flex justify-between items-center mb-4">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">{service.replace('_', ' ')}</span>
+              {res.status === 'loading' ? (
+                <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              ) : res.status === 'success' ? (
+                <span className="text-green-400 text-xs font-bold">● ONLINE</span>
+              ) : (
+                <span className="text-red-400 text-xs font-bold">● FAILURE</span>
+              )}
+            </div>
+            <p className={`text-sm font-medium ${res.status === 'error' ? 'text-red-300' : 'text-white'}`}>{res.message}</p>
+            {res.status === 'error' && (
+              <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <p className="text-[10px] text-red-200">💡 Tip: Check your .env.local credentials and RLS policies in the dashboard.</p>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      
+      <div className="mt-10 p-6 glassmorphism rounded-2xl border border-white/10 bg-brand-purple/5">
+        <h3 className="text-sm font-bold text-white uppercase mb-2">Diagnostic Log</h3>
+        <p className="text-xs text-gray-400 leading-relaxed italic">
+          If you are seeing a "Row-Level Security policy" error on Supabase, ensure you have run the fix SQL I provided in the dashboard. For "Bucket not found" errors, create a bucket named 'projects' in Supabase Storage with 'Public' access enabled.
+        </p>
+      </div>
+    </div>
   );
 }
