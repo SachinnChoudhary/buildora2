@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getProjectById } from '@/lib/projects';
+import { mapSupabaseProject } from '@/lib/supabaseHelpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,7 +10,25 @@ export async function GET(
 ) {
   const id = params.id;
 
-  // Use Firestore if configured
+  // Priority 1: Use Supabase (Postgres)
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (!error && data) {
+        return NextResponse.json({ success: true, data: mapSupabaseProject(data) });
+      }
+    } catch (error) {
+      console.error('Error fetching project from Supabase:', error);
+    }
+  }
+
+  // Priority 2: Use Firestore if configured
   if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY) {
     try {
       const { getAdminDb } = await import('@/lib/firebase-admin');
@@ -24,7 +43,7 @@ export async function GET(
     }
   }
 
-  // Fallback to local
+  // Priority 3: Fallback to local hardcoded DB
   const project = getProjectById(id);
   if (project) {
     return NextResponse.json({ success: true, data: project });

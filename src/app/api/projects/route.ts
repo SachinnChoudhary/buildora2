@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { filterProjects } from '@/lib/projects';
+import { mapSupabaseProject } from '@/lib/supabaseHelpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,14 +26,8 @@ export async function GET(request: Request) {
       const { data, error } = await query.order('created_at', { ascending: false });
       if (error) throw error;
 
-      // Map snake_case to camelCase for UI compatibility if needed
-      projects = data.map((p: any) => ({
-        ...p,
-        thumbnailUrl: p.thumbnail_url || p.thumbnailUrl,
-        sourceUrl: p.source_url || p.sourceUrl,
-        techStack: p.tech_stack || p.techStack,
-        fileTree: p.file_tree || p.fileTree
-      }));
+      // Map snake_case to camelCase for UI compatibility
+      projects = (data || []).map(mapSupabaseProject);
 
       if (search) {
         const lowerQ = search.toLowerCase();
