@@ -199,7 +199,11 @@ export default function BuildoraBot({ currentProject: propCurrentProject }: Buil
               height: isMinimized ? '72px' : '550px' 
             }}
             exit={{ opacity: 0, y: 100, scale: 0.95 }}
-            className={`fixed bottom-24 right-6 z-[9998] w-[350px] sm:w-[400px] glassmorphism border border-white/10 rounded-2xl flex flex-col overflow-hidden shadow-2xl transition-all duration-300 ease-in-out`}
+            className={`fixed bottom-0 right-0 sm:bottom-24 sm:right-6 z-[9998] w-full sm:w-[400px] glassmorphism sm:border border-white/10 sm:rounded-2xl flex flex-col overflow-hidden shadow-2xl transition-all duration-300 ease-in-out`}
+            style={{ 
+              height: isMinimized ? '72px' : (typeof window !== 'undefined' && window.innerWidth < 640 ? '100%' : '550px'),
+              zIndex: typeof window !== 'undefined' && window.innerWidth < 640 && !isMinimized ? 10000 : 9998
+            }}
           >
             {/* Header */}
             <div className={`p-4 border-b border-white/10 bg-white/5 flex items-center justify-between cursor-pointer`} onClick={() => setIsMinimized(!isMinimized)}>

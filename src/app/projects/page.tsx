@@ -65,29 +65,36 @@ export default function ProjectsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-4">
-        <span className="text-gray-500 text-xs uppercase tracking-wider font-semibold self-center mr-2">Domain:</span>
-        {DOMAINS.map(d => (
-          <button
-            key={d}
-            onClick={() => setDomainFilter(d)}
-            className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all border ${domainFilter === d ? 'bg-brand-purple/20 border-brand-purple/40 text-brand-purple' : 'border-white/10 text-gray-400 hover:bg-white/5 hover:text-white'}`}
-          >
-            {d}
-          </button>
-        ))}
-      </div>
-      <div className="flex flex-wrap gap-3 mb-10">
-        <span className="text-gray-500 text-xs uppercase tracking-wider font-semibold self-center mr-2">Level:</span>
-        {DIFFICULTIES.map(d => (
-          <button
-            key={d}
-            onClick={() => setDiffFilter(d)}
-            className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all border ${diffFilter === d ? 'bg-brand-orange/20 border-brand-orange/40 text-brand-orange' : 'border-white/10 text-gray-400 hover:bg-white/5 hover:text-white'}`}
-          >
-            {d}
-          </button>
-        ))}
+      <div className="flex flex-col gap-6 mb-10 overflow-hidden">
+        <div>
+          <span className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-3 block">Domain Spectrum</span>
+          <div className="flex gap-2.5 overflow-x-auto pb-4 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
+            {DOMAINS.map(d => (
+              <button
+                key={d}
+                onClick={() => setDomainFilter(d)}
+                className={`px-5 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all border ${domainFilter === d ? 'bg-brand-purple border-brand-purple shadow-[0_0_20px_rgba(139,92,246,0.3)] text-white' : 'border-white/10 text-gray-400 hover:bg-white/5 hover:text-white'}`}
+              >
+                {d}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <span className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-3 block">Complexity Tier</span>
+          <div className="flex gap-2.5 overflow-x-auto pb-2 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
+            {DIFFICULTIES.map(d => (
+              <button
+                key={d}
+                onClick={() => setDiffFilter(d)}
+                className={`px-5 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all border ${diffFilter === d ? 'bg-brand-orange border-brand-orange shadow-[0_0_20px_rgba(249,115,22,0.3)] text-white' : 'border-white/10 text-gray-400 hover:bg-white/5 hover:text-white'}`}
+              >
+                {d}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Results count */}

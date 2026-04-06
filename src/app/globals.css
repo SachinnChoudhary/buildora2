@@ -27,6 +27,12 @@ body {
   background: var(--background);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ===== Mobile-safe touch targets ===== */
+button, a {
+  touch-action: manipulation;
 }
 
 /* ===== Subtle grid background ===== */
@@ -125,17 +131,27 @@ body {
   background: linear-gradient(135deg, var(--brand-orange), var(--brand-purple));
   color: white;
   font-weight: 700;
-  padding: 16px 48px;
+  padding: 14px 32px;
   border-radius: 9999px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
   transition: all 0.3s ease;
   box-shadow: 0 0 30px rgba(139, 92, 246, 0.2), 0 0 60px rgba(249, 115, 22, 0.1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
 }
 .btn-gradient:hover {
   transform: scale(1.05);
   box-shadow: 0 0 40px rgba(139, 92, 246, 0.35), 0 0 80px rgba(249, 115, 22, 0.2);
+}
+@media (min-width: 768px) {
+  .btn-gradient {
+    padding: 16px 48px;
+    font-size: 0.85rem;
+  }
 }
 
 /* ===== Short line divider ===== */
@@ -224,3 +240,40 @@ body {
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
+
+/* ===== Mobile Responsiveness Utilities ===== */
+@media (max-width: 640px) {
+  .pill-badge {
+    padding: 6px 14px;
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+  }
+}
+
+/* Base mobile adjustments */
+@media (max-width: 768px) {
+  h1 {
+    font-size: clamp(2.5rem, 10vw, 4rem) !important;
+    line-height: 1.1 !important;
+  }
+  h2 {
+    font-size: clamp(1.8rem, 8vw, 3rem) !important;
+  }
+  .section-padding {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+  }
+  .container-custom {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+}
+
+/* Fix for glassmorphism on mobile to increase readability */
+@media (max-width: 640px) {
+  .glassmorphism {
+    background: rgba(15, 13, 25, 0.9);
+    backdrop-filter: blur(10px);
+  }
+}
+

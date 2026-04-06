@@ -79,20 +79,22 @@ export default function ReviewsSection({ projectId }: ReviewsSectionProps) {
   };
 
   return (
-    <section className="mt-16 pt-16 border-t border-white/10">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+    <section className="mt-16 pt-12 sm:pt-16 border-t border-white/10">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-8">
         <div>
-          <h2 className="text-3xl font-black text-white uppercase tracking-tight mb-2">Student Reviews</h2>
-          <div className="flex items-center gap-4">
-            <RatingStars rating={stats.average} size="lg" />
-            <span className="text-2xl font-bold text-white">{stats.average}</span>
-            <span className="text-gray-500 text-sm">({stats.count} students reviewed)</span>
+          <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight mb-3">Student Reviews</h2>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <RatingStars rating={stats.average} size="md" />
+              <span className="text-xl sm:text-2xl font-bold text-white">{stats.average}</span>
+            </div>
+            <span className="text-gray-500 text-[10px] font-bold uppercase tracking-widest">({stats.count} reviews)</span>
           </div>
         </div>
 
         {!user && (
-          <div className="p-4 bg-white/5 border border-white/10 rounded-xl max-w-sm">
-            <p className="text-xs text-gray-400 leading-relaxed">
+          <div className="p-5 bg-white/5 border border-white/10 rounded-2xl w-full md:max-w-xs">
+            <p className="text-[10px] sm:text-xs text-gray-400 leading-relaxed font-medium">
               Log in to share your experience with this project and help other students build excellence.
             </p>
           </div>

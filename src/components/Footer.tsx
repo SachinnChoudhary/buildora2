@@ -6,14 +6,14 @@ export default function Footer() {
       {/* Subtle glow */}
       <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-brand-purple/5 blur-[120px] rounded-full pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8 relative z-10">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-10 md:gap-8 mb-12">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 pt-16 pb-12 relative z-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-12 mb-16">
           {/* Brand */}
-          <div className="col-span-2">
-            <Link href="/" className="text-2xl font-extrabold tracking-tighter block mb-4">
+          <div className="col-span-1 sm:col-span-2">
+            <Link href="/" className="text-2xl font-extrabold tracking-tighter block mb-6">
               <span className="text-brand-orange">Build</span><span className="text-white">ora</span><span className="text-brand-purple">.</span>
             </Link>
-            <p className="text-gray-400 max-w-sm text-sm leading-relaxed">
+            <p className="text-gray-400 max-w-sm text-sm leading-relaxed mb-8">
               Your Blueprint to Tech Excellence. We help B.Tech students build, deploy, and showcase production-ready projects that get you hired.
             </p>
           </div>

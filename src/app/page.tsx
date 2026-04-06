@@ -81,18 +81,18 @@ export default function Home() {
 
         {/* giant watermark */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10 select-none pointer-events-none">
-          <span className="text-[10rem] md:text-[16rem] lg:text-[20rem] font-black text-outline tracking-tighter leading-none">BUILDORA</span>
+          <span className="text-[6rem] sm:text-[10rem] md:text-[16rem] lg:text-[20rem] font-black text-outline tracking-tighter leading-none">BUILDORA</span>
         </div>
 
         <Reveal>
-          <span className="pill-badge mb-10">
+          <span className="pill-badge mb-8 sm:mb-10">
             <span className="pulse-dot" />
             REDEFINING ACADEMIC PROJECTS
           </span>
         </Reveal>
 
         <Reveal delay={100}>
-          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-black tracking-tight leading-[1.05] max-w-5xl mb-8 uppercase">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-[5.5rem] font-black tracking-tight leading-[1.05] max-w-5xl mb-6 sm:mb-8 uppercase">
             THE FUTURE OF<br />
             <span className="text-gradient">PRODUCTION-READY</span><br />
             STUDENT PROJECTS
@@ -146,7 +146,7 @@ export default function Home() {
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-transparent via-brand-purple/[0.02] to-transparent" />
         {/* giant bg text */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10 select-none pointer-events-none whitespace-nowrap">
-          <span className="text-[8rem] md:text-[14rem] font-black text-outline tracking-tighter">SHIFT</span>
+          <span className="text-[5rem] sm:text-[8rem] md:text-[14rem] font-black text-outline tracking-tighter">SHIFT</span>
         </div>
 
         <div className="max-w-5xl mx-auto text-center">
@@ -460,7 +460,7 @@ export default function Home() {
 
         <div className="max-w-4xl mx-auto text-center relative">
           <Reveal>
-            <h2 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black uppercase tracking-tight leading-[1] mb-8">
+            <h2 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black uppercase tracking-tight leading-[1] mb-8">
               STOP SEARCHING.<br />
               <span className="text-gradient">START BUILDING.</span>
             </h2>

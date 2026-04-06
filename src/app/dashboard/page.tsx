@@ -116,9 +116,9 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 mb-12">
         {/* Welcome / Stats Widget */}
-        <div className="glassmorphism p-8 rounded-3xl col-span-1 lg:col-span-2 relative overflow-hidden group">
+        <div className="glassmorphism p-6 sm:p-8 rounded-3xl col-span-1 lg:col-span-2 relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-64 h-64 bg-brand-purple/10 blur-[80px] rounded-full translate-x-1/2 -translate-y-1/2 group-hover:bg-brand-purple/20 transition-all duration-700 pointer-events-none"></div>
           <div className="relative z-10">
             <h2 className="text-xs font-bold text-brand-purple uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
@@ -126,17 +126,17 @@ export default function DashboardPage() {
                Engineer Overview
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-md">
+              <div className="bg-white/5 p-5 sm:p-6 rounded-2xl border border-white/10 backdrop-blur-md">
                 <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Purchased</p>
-                <p className="text-4xl font-black text-white">{orders.length}</p>
+                <p className="text-3xl sm:text-4xl font-black text-white">{orders.length}</p>
               </div>
-              <div className="bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-md">
+              <div className="bg-white/5 p-5 sm:p-6 rounded-2xl border border-white/10 backdrop-blur-md">
                 <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Custom Requests</p>
-                <p className="text-4xl font-black text-brand-orange">{customRequests.length}</p>
+                <p className="text-3xl sm:text-4xl font-black text-brand-orange">{customRequests.length}</p>
               </div>
-              <div className="bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-md">
+              <div className="bg-white/5 p-5 sm:p-6 rounded-2xl border border-white/10 backdrop-blur-md">
                 <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Active Build</p>
-                <p className="text-4xl font-black text-brand-purple">{customRequests.filter(r => r.status === 'in-progress').length || '-'}</p>
+                <p className="text-3xl sm:text-4xl font-black text-brand-purple">{customRequests.filter(r => r.status === 'in-progress').length || '-'}</p>
               </div>
             </div>
           </div>
@@ -153,7 +153,7 @@ export default function DashboardPage() {
             </div>
             <h3 className="text-xl font-bold mb-2 uppercase tracking-tight">Need Something Unique?</h3>
             <p className="text-sm text-gray-400 mb-6 max-w-[200px]">Our elite developers can build any custom project architecture for you.</p>
-            <Link href="/custom-requests" className="btn-gradient px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-brand-purple/20">
+            <Link href="/custom-requests" className="btn-gradient w-full py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-brand-purple/20">
               Request Custom &rarr;
             </Link>
           </div>
@@ -192,37 +192,36 @@ export default function DashboardPage() {
                 if (!project) return null;
 
                 return (
-                  <div key={order.id} className="glassmorphism p-8 rounded-3xl flex flex-col md:flex-row justify-between items-center gap-8 border-l-4 border-l-brand-orange hover:bg-white/5 transition-all group">
+                  <div key={order.id} className="glassmorphism p-6 sm:p-8 rounded-3xl flex flex-col justify-between items-stretch gap-6 border-l-4 border-l-brand-orange hover:bg-white/5 transition-all group">
                     <div className="flex-grow">
-                      <div className="flex flex-wrap items-center gap-3 mb-3">
-                        <h3 className="text-2xl font-black text-white uppercase tracking-tight">{project.title}</h3>
-                        <span className="px-3 py-1 bg-brand-orange/20 border border-brand-orange/30 rounded-full text-[10px] font-bold uppercase tracking-widest text-brand-orange">Ownership Confirmed</span>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+                        <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">{project.title}</h3>
+                        <span className="inline-block w-fit px-3 py-1 bg-brand-orange/20 border border-brand-orange/30 rounded-full text-[9px] font-bold uppercase tracking-widest text-brand-orange">Ownership Confirmed</span>
                       </div>
-                      <p className="text-gray-400 text-sm mb-4 leading-relaxed max-w-2xl">{project.subtitle}</p>
                       
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                          <div>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Purchased</p>
-                            <p className="text-sm font-semibold text-white">{new Date(order.createdAt).toLocaleDateString()}</p>
+                            <p className="text-[9px] font-bold uppercase tracking-widest text-gray-500 mb-1">Purchased</p>
+                            <p className="text-xs sm:text-sm font-semibold text-white">{new Date(order.createdAt).toLocaleDateString()}</p>
                          </div>
                          <div>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Stack</p>
-                            <p className="text-sm font-semibold text-brand-purple">{project.techStack.slice(0, 2).join(', ')}</p>
+                            <p className="text-[9px] font-bold uppercase tracking-widest text-gray-500 mb-1">Stack</p>
+                            <p className="text-xs sm:text-sm font-semibold text-brand-purple">{project.techStack.slice(0, 2).join(', ')}</p>
                          </div>
                          <div className="col-span-2">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Status</p>
+                            <p className="text-[9px] font-bold uppercase tracking-widest text-gray-500 mb-1">Build Progress</p>
                             <div className="flex items-center gap-3">
                                <div className="flex-grow h-1.5 bg-white/10 rounded-full overflow-hidden">
                                   <div className="h-full bg-gradient-to-r from-brand-purple to-brand-orange w-[45%]"></div>
-                               </div>
-                               <span className="text-[10px] font-bold text-gray-400">45% COMPLETE</span>
+                                </div>
+                               <span className="text-[9px] font-bold text-gray-400 whitespace-nowrap">45% COMPLETE</span>
                             </div>
                          </div>
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-3 min-w-[220px] w-full md:w-auto">
-                      <Link href={`/projects/${project.id}`} className="w-full py-4 bg-white/10 hover:bg-white/20 text-center rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all text-white border border-white/10">
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <Link href={`/projects/${project.id}`} className="flex-1 py-3.5 bg-white/10 hover:bg-white/20 text-center rounded-xl text-[9px] font-black uppercase tracking-widest transition-all text-white border border-white/10">
                         Access Resources
                       </Link>
                       <button 
@@ -230,9 +229,9 @@ export default function DashboardPage() {
                           const botBtn = document.querySelector('[data-bot-trigger]') as HTMLButtonElement;
                           if (botBtn) botBtn.click();
                         }}
-                        className="w-full py-4 bg-brand-purple/10 border border-brand-purple/30 hover:bg-brand-purple/20 text-center rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all text-brand-purple"
+                        className="flex-1 py-3.5 bg-brand-purple/10 border border-brand-purple/30 hover:bg-brand-purple/20 text-center rounded-xl text-[9px] font-black uppercase tracking-widest transition-all text-brand-purple"
                       >
-                        Launch AI Mentor
+                        AI Mentor
                       </button>
                     </div>
                   </div>
@@ -247,11 +246,11 @@ export default function DashboardPage() {
                     <div className="h-[1px] flex-grow bg-white/5"></div>
                   </div>
                   {customRequests.map((request) => (
-                    <div key={request.id} className="glassmorphism p-8 rounded-3xl flex flex-col md:flex-row justify-between items-center gap-8 border-l-4 border-l-brand-purple hover:bg-white/5 transition-all">
+                    <div key={request.id} className="glassmorphism p-6 sm:p-8 rounded-3xl flex flex-col justify-between items-stretch gap-6 border-l-4 border-l-brand-purple hover:bg-white/5 transition-all">
                       <div className="flex-grow">
-                        <div className="flex flex-wrap items-center gap-3 mb-3">
-                          <h3 className="text-2xl font-black text-white uppercase tracking-tight">{request.title}</h3>
-                          <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+                          <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">{request.title}</h3>
+                          <span className={`inline-block w-fit px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest ${
                             request.status === 'pending' ? 'bg-yellow-500/20 border border-yellow-500/30 text-yellow-300' :
                             request.status === 'in-progress' ? 'bg-blue-500/20 border border-blue-500/30 text-blue-300' :
                             'bg-green-500/20 border border-green-500/30 text-green-300'
@@ -261,27 +260,25 @@ export default function DashboardPage() {
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                            <div>
-                              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Budget</p>
-                              <p className="text-white font-bold">{request.budget}</p>
+                              <p className="text-[9px] font-bold uppercase tracking-widest text-gray-500 mb-1">Budget</p>
+                              <p className="text-white font-bold text-sm">{request.budget}</p>
                            </div>
                            <div>
-                              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Deadline</p>
-                              <p className="text-white font-bold">{request.deadline}</p>
+                              <p className="text-[9px] font-bold uppercase tracking-widest text-gray-500 mb-1">Timeframe</p>
+                              <p className="text-white font-bold text-sm">{request.deadline}</p>
                            </div>
                            <div className="col-span-2 md:col-span-1">
-                              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Tech Stack</p>
-                              <p className="text-brand-purple font-semibold text-xs">{request.techStack?.join(', ') || 'Not specified'}</p>
+                              <p className="text-[9px] font-bold uppercase tracking-widest text-gray-500 mb-1">Tech Stack</p>
+                              <p className="text-brand-purple font-semibold text-[10px] sm:text-xs">{request.techStack?.slice(0, 2).join(', ') || 'Auto-matching...'}</p>
                            </div>
                         </div>
                       </div>
 
-                      <div className="flex flex-col gap-3 min-w-[220px] w-full md:w-auto">
-                        <button className="w-full py-4 bg-white/5 border border-white/10 text-center rounded-2xl text-[10px] font-black uppercase tracking-widest text-gray-400 cursor-not-allowed">
-                          {request.status === 'pending' ? 'Reviewing Vision' : 
-                           request.status === 'in-progress' ? 'Engineering in Progress' : 
-                           'Build Completed'}
-                        </button>
-                      </div>
+                      <button className="w-full py-4 bg-white/5 border border-white/10 text-center rounded-xl text-[9px] font-black uppercase tracking-widest text-gray-400 cursor-not-allowed">
+                        {request.status === 'pending' ? 'Reviewing Vision' : 
+                         request.status === 'in-progress' ? 'Engineering in Progress' : 
+                         'Build Completed'}
+                      </button>
                     </div>
                   ))}
                 </div>
