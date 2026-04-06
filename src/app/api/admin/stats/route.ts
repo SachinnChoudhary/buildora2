@@ -49,6 +49,12 @@ export async function GET() {
       if (totalProjects === 0) {
         const projectsSnap = await adminDb.collection('projects').get();
         totalProjects = projectsSnap.size;
+        
+        // Final fallback to mock data if Firestore is also empty
+        if (totalProjects === 0) {
+          const { PROJECTS_DB } = await import('@/lib/projects');
+          totalProjects = PROJECTS_DB.length;
+        }
       }
 
       return NextResponse.json({

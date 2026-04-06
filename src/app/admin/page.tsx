@@ -739,10 +739,10 @@ function DiagnosticsPanel() {
 
     // 4. Gemini AI Check
     try {
-      const res = await fetch('/api/chat', { 
+      const res = await fetch('/api/bot', { 
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: 'health_check_ping', context: [] }) 
+        body: JSON.stringify({ message: 'health_check_ping', history: [] }) 
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -760,7 +760,7 @@ function DiagnosticsPanel() {
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-10">
         <div>
-          <h2 className="text-2xl font-bold text-white uppercase tracking-tight mt-16 mt-0">System Health</h2>
+          <h2 className="text-2xl font-bold text-white uppercase tracking-tight mt-0">System Health</h2>
           <p className="text-gray-500 text-xs mt-1">Verify real-time connectivity to all external services.</p>
         </div>
         <button onClick={runAllTests} className="btn-gradient px-6 py-2.5 text-[10px] uppercase font-bold tracking-widest">RE-RUN ALL TESTS</button>

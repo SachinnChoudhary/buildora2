@@ -37,9 +37,13 @@ export async function GET(request: Request) {
         );
       }
       
+      if (projects.length === 0) {
+        throw new Error('Supabase project list is empty. Falling back to Firebase.');
+      }
+      
       return NextResponse.json({ success: true, count: projects.length, data: projects });
     } catch (e) {
-      console.warn('Supabase fetch failed, falling back to Firebase:', e);
+      console.warn('Supabase fetch returned 0 items or failed, falling back to Firebase:', e);
     }
   }
 
@@ -70,6 +74,10 @@ export async function GET(request: Request) {
           p.title?.toLowerCase().includes(lowerQ) || 
           p.techStack?.some((t: string) => t.toLowerCase().includes(lowerQ))
         );
+      }
+
+      if (projects.length === 0) {
+        throw new Error('No projects found in Firebase. Falling back to local mock data.');
       }
     } catch (error) {
       console.error('Error fetching projects from Firestore:', error);
