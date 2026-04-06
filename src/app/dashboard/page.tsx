@@ -3,7 +3,6 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { PROJECTS_DB } from '@/lib/projects';
 
 interface Order {
   id: string;
@@ -29,6 +28,7 @@ export default function DashboardPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [customRequests, setCustomRequests] = useState<CustomRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [allProjects, setAllProjects] = useState<any[]>([]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -55,6 +55,13 @@ export default function DashboardPage() {
         if (requestsData.success) {
           setCustomRequests(requestsData.data);
         }
+
+        // Fetch all projects (from Supabase/Firebase/local)
+        const projectsRes = await fetch('/api/projects');
+        const projectsData = await projectsRes.json();
+        if (projectsData.success) {
+          setAllProjects(projectsData.data);
+        }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -74,12 +81,14 @@ export default function DashboardPage() {
   }
 
   const getProjectDetails = (projectId: string) => {
-    return PROJECTS_DB.find(p => p.id === projectId);
+    return allProjects.find(p => p.id === projectId);
   };
 
   const getRecommendedProjects = () => {
+    if (allProjects.length === 0) return [];
+    
     if (orders.length === 0) {
-      return PROJECTS_DB.filter(p => p.featured).slice(0, 3);
+      return allProjects.filter(p => p.featured).slice(0, 3);
     }
     
     // Simple recommendation: projects in same domain or with similar tech
@@ -87,7 +96,7 @@ export default function DashboardPage() {
     const purchasedProjects = purchasedProjectIds.map(id => getProjectDetails(id)).filter(Boolean);
     const purchasedDomains = new Set(purchasedProjects.map(p => p?.domain));
     
-    return PROJECTS_DB
+    return allProjects
       .filter(p => !purchasedProjectIds.includes(p.id))
       .filter(p => purchasedDomains.has(p.domain))
       .slice(0, 3);

@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { PROJECTS_DB } from '@/lib/projects';
 import { useFirestoreRealtime } from '@/hooks/useFirestore';
 import { getUserProfile } from '@/services/firestore';
 

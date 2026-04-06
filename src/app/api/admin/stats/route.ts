@@ -3,35 +3,57 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  // Use Firestore if configured
+  let totalProjects = 0;
+  let totalRevenue = 0;
+  let totalOrders = 0;
+  let totalUsers = 0;
+  let pendingCustomRequests = 0;
+
+  // Get project count from Supabase (where projects actually live)
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      const { count, error } = await supabase
+        .from('projects')
+        .select('*', { count: 'exact', head: true });
+      if (!error && count !== null) {
+        totalProjects = count;
+      }
+    } catch (e) {
+      console.error('Error counting projects from Supabase:', e);
+    }
+  }
+
+  // Get orders, users, custom requests from Firestore
   if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY) {
     try {
       const { getAdminDb } = await import('@/lib/firebase-admin');
       const adminDb = getAdminDb();
       
-      // Fetch counts and aggregations
-      const [projectsSnap, ordersSnap, usersSnap, customRequestsSnap] = await Promise.all([
-        adminDb.collection('projects').get(),
+      const [ordersSnap, usersSnap, customRequestsSnap] = await Promise.all([
         adminDb.collection('orders').get(),
         adminDb.collection('users').get(),
         adminDb.collection('project_requests').get()
       ]);
 
-      const totalRevenue = ordersSnap.docs.reduce((sum, doc) => {
+      totalRevenue = ordersSnap.docs.reduce((sum, doc) => {
         const order = doc.data();
         return sum + (order.status === 'completed' ? (order.amount || 0) : 0);
       }, 0);
 
-      // Return real-world data
+      totalOrders = ordersSnap.size;
+      totalUsers = usersSnap.size;
+      pendingCustomRequests = customRequestsSnap.docs.filter(d => d.data().status === 'pending').length;
+
+      // Fallback: if Supabase project count failed, try Firestore 
+      if (totalProjects === 0) {
+        const projectsSnap = await adminDb.collection('projects').get();
+        totalProjects = projectsSnap.size;
+      }
+
       return NextResponse.json({
         success: true,
-        stats: {
-          totalRevenue,
-          totalOrders: ordersSnap.size,
-          totalUsers: usersSnap.size,
-          totalProjects: projectsSnap.size,
-          pendingCustomRequests: customRequestsSnap.docs.filter(d => d.data().status === 'pending').length
-        }
+        stats: { totalRevenue, totalOrders, totalUsers, totalProjects, pendingCustomRequests }
       });
     } catch (error) {
       console.error('Admin stats error:', error);
@@ -43,11 +65,11 @@ export async function GET() {
   return NextResponse.json({
     success: true,
     stats: {
-      totalRevenue: 24500,
-      totalOrders: 12,
-      totalUsers: 128,
-      totalProjects: 8,
-      pendingCustomRequests: 3
+      totalRevenue: 0,
+      totalOrders: 0,
+      totalUsers: 0,
+      totalProjects,
+      pendingCustomRequests: 0
     }
   });
 }
