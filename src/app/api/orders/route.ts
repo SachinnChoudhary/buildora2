@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
-import Stripe from 'stripe';
+import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
 
-// Initialize Stripe if key is present
-const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2025-03-31.basil' as any,
-}) : null;
-
+const PHONEPE_MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID || 'PGTESTPAYUAT';
+const PHONEPE_SALT_KEY = process.env.PHONEPE_SALT_KEY || '099eb0cd-02cf-4e2a-8aca-3e6c6aff0399';
+const PHONEPE_SALT_INDEX = process.env.PHONEPE_SALT_INDEX || '1';
+const PHONEPE_ENV = process.env.PHONEPE_ENV || 'UAT';
+const PHONEPE_HOST = PHONEPE_ENV === 'PROD' ? 'https://api.phonepe.com/apis/hermes' : 'https://api-preprod.phonepe.com/apis/pg-sandbox';
 // Mock orders store for local fallback
 const mockOrders: Array<{
   id: string;
@@ -60,8 +60,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Use Stripe and Firestore if configured
-    if (stripe && process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY) {
+    // Use PhonePe and Firestore if configured
+    if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY) {
       const { getAdminDb } = await import('@/lib/firebase-admin');
       const adminDb = getAdminDb();
 
@@ -74,33 +74,50 @@ export async function POST(request: Request) {
         createdAt: new Date().toISOString(),
       });
 
-      // 2. Create Stripe Checkout Session
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: [
-          {
-            price_data: {
-              currency: 'inr',
-              product_data: {
-                name: `Project: ${projectId}`,
-                description: 'Full source code access',
-              },
-              unit_amount: amount * 100, // Stripe uses cents
-            },
-            quantity: 1,
-          },
-        ],
-        mode: 'payment',
-        success_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/projects/${projectId}?success=true`,
-        cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/projects/${projectId}?canceled=true`,
-        metadata: {
-          orderId: orderRef.id,
-          userId,
-          projectId,
+      const transactionId = `TXN_${orderRef.id}`;
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+
+      const data = {
+        merchantId: PHONEPE_MERCHANT_ID,
+        merchantTransactionId: transactionId,
+        merchantUserId: userId,
+        amount: amount * 100, // Amount in paise
+        redirectUrl: `${baseUrl}/projects/${projectId}?success=true`,
+        redirectMode: 'REDIRECT',
+        callbackUrl: `${baseUrl}/api/webhooks/phonepe`,
+        mobileNumber: '9999999999',
+        paymentInstrument: {
+          type: 'PAY_PAGE',
         },
+      };
+
+      const payload = JSON.stringify(data);
+      const base64Payload = Buffer.from(payload).toString('base64');
+      const apiEndpoint = '/pg/v1/pay';
+
+      const stringToHash = base64Payload + apiEndpoint + PHONEPE_SALT_KEY;
+      const sha256 = crypto.createHash('sha256').update(stringToHash).digest('hex');
+      const xVerify = `${sha256}###${PHONEPE_SALT_INDEX}`;
+
+      const response = await fetch(`${PHONEPE_HOST}${apiEndpoint}`, {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-VERIFY': xVerify,
+        },
+        body: JSON.stringify({
+          request: base64Payload,
+        }),
       });
 
-      return NextResponse.json({ success: true, data: { id: orderRef.id, url: session.url } }, { status: 201 });
+      const phonePeRes = await response.json();
+      
+      if (phonePeRes.success && phonePeRes.data?.instrumentResponse?.redirectInfo?.url) {
+        return NextResponse.json({ success: true, data: { id: orderRef.id, url: phonePeRes.data.instrumentResponse.redirectInfo.url } }, { status: 201 });
+      } else {
+        throw new Error(phonePeRes.message || 'PhonePe payment initiation failed');
+      }
     }
 
     // --- MOCK FALLBACK ---

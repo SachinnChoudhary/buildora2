@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { type Project } from '@/lib/projects';
@@ -97,6 +98,11 @@ export default function ProjectDetail() {
         <div className="lg:col-span-2 space-y-10">
           {/* Hero card */}
           <div className="glassmorphism p-8 md:p-10 rounded-3xl relative overflow-hidden">
+            {project.thumbnail && (
+              <div className="relative w-full h-64 md:h-80 mb-8 rounded-2xl overflow-hidden border border-white/10">
+                <Image src={project.thumbnail} alt={project.title} fill className="object-cover" />
+              </div>
+            )}
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-purple/5 blur-[120px] rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none" />
 
             <div className="flex items-center gap-4 mb-6">
@@ -195,7 +201,7 @@ export default function ProjectDetail() {
               projectTitle={project.title} 
             />
             <p className="text-center text-[10px] text-gray-500 mb-6 leading-relaxed">
-              Secure payment via Stripe. 14-day refund policy<br />if the code doesn&apos;t match the description.
+              Secure payment via PhonePe. 14-day refund policy<br />if the code doesn&apos;t match the description.
             </p>
 
             <div className="space-y-3 pt-4 border-t border-white/10">

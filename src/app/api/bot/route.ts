@@ -22,7 +22,7 @@ const PREDEFINED_KNOWLEDGE = [
   },
   {
     keywords: ["how to buy", "purchase", "buying project", "get a project", "how can i pay"],
-    answer: "You can purchase any project by clicking the 'Get Started' or 'Buy Now' button on a project's detail page. We use Stripe for secure payments. Once purchased, you'll get instant access to the source code, setup guides, and my mentorship!"
+    answer: "You can purchase any project by clicking the 'Get Started' or 'Buy Now' button on a project's detail page. We use PhonePe for secure payments. Once purchased, you'll get instant access to the source code, setup guides, and my mentorship!"
   },
   {
     keywords: ["is it free", "cost", "price", "payment", "how much"],

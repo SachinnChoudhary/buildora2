@@ -43,7 +43,7 @@ const PROJECTS = [
 
 const STEPS = [
   { n: '01', title: 'Discover', desc: 'Browse curated projects by domain, tech stack, or difficulty level.' },
-  { n: '02', title: 'Purchase', desc: 'Secure checkout via Stripe. Instant access to source code & docs.' },
+  { n: '02', title: 'Purchase', desc: 'Secure checkout via PhonePe. Instant access to source code & docs.' },
   { n: '03', title: 'Build', desc: 'Follow step-by-step roadmaps. Get help from our AI Mentor anytime.' },
   { n: '04', title: 'Deploy', desc: 'Ship to production with 1-click guides. Add a live link to your resume.' },
 ];

@@ -42,7 +42,7 @@ export default function PrivacyPage() {
           <p>
             We do not sell, trade, or otherwise transfer your personal information 
             to outside parties except for trusted third parties who help us operate 
-            our platform (e.g., Stripe for payments, Google for Auth).
+            our platform (e.g., PhonePe for payments, Google for Auth).
           </p>
         </section>
 

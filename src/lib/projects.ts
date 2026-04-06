@@ -154,7 +154,7 @@ export const PROJECTS_DB: Project[] = [
       'RabbitMQ event-driven communication',
       'Redis caching layer for product catalog',
       'JWT-based auth service',
-      'Stripe payment integration',
+      'PhonePe payment integration',
       'Kubernetes deployment manifests',
       'API Gateway with rate limiting',
     ],

@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { type Project } from '@/lib/projects';
 import Skeleton from '@/components/Skeleton';
@@ -127,12 +128,21 @@ export default function ProjectsPage() {
             <Link href={`/projects/${project.id}`} key={project.id} className="block group">
             <div className="glassmorphism rounded-2xl overflow-hidden hover:border-brand-purple/30 transition-all duration-500 flex flex-col h-full relative">
               {/* top section */}
-              <div className="h-40 bg-white/[0.02] relative flex items-center justify-center border-b border-white/5 group-hover:bg-brand-purple/5 transition-colors duration-500">
-                <span className="text-5xl font-black text-white/[0.04] tracking-widest uppercase">{project.domain.split(' ')[0]}</span>
-                <span className={`absolute top-4 right-4 text-[9px] font-bold tracking-[0.2em] uppercase px-2.5 py-1 rounded-full border ${project.difficulty === 'Major' ? 'text-brand-orange border-brand-orange/30 bg-brand-orange/10' : 'text-brand-purple border-brand-purple/30 bg-brand-purple/10'}`}>
+              <div className="h-40 bg-white/[0.02] relative flex items-center justify-center border-b border-white/5 group-hover:bg-brand-purple/5 transition-colors duration-500 overflow-hidden">
+                {project.thumbnail ? (
+                  <Image 
+                    src={project.thumbnail} 
+                    alt={project.title} 
+                    fill 
+                    className="object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" 
+                  />
+                ) : (
+                  <span className="text-5xl font-black text-white/[0.04] tracking-widest uppercase">{project.domain.split(' ')[0]}</span>
+                )}
+                <span className={`absolute top-4 right-4 text-[9px] font-bold tracking-[0.2em] uppercase px-2.5 py-1 rounded-full border z-10 ${project.difficulty === 'Major' ? 'text-brand-orange border-brand-orange/30 bg-[#1e1310]' : 'text-brand-purple border-brand-purple/30 bg-[#161226]'}`}>
                   {project.difficulty}
                 </span>
-                <div className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-brand-purple to-brand-orange w-0 group-hover:w-full transition-all duration-700" />
+                <div className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-brand-purple to-brand-orange w-0 group-hover:w-full transition-all duration-700 z-10" />
               </div>
 
               {/* content */}
