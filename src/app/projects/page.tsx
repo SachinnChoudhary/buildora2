@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { type Project } from '@/lib/projects';
+import Skeleton from '@/components/Skeleton';
 
 const DOMAINS = ['All', 'Management', 'Healthcare', 'Business', 'Software Development', 'Cybersecurity', 'Networking', 'E-Commerce', 'Education', 'HR Tech', 'FinTech', 'Web3 / Healthcare', 'Generative AI', 'Cloud Native'];
 const DIFFICULTIES = ['All', 'Mini', 'Major'];
@@ -99,13 +100,18 @@ export default function ProjectsPage() {
         {loading ? (
           // Loading skeletons
           Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="glassmorphism rounded-2xl h-[380px] animate-pulse border border-white/5 p-8">
-               <div className="h-40 bg-white/5 rounded-xl mb-6"></div>
-               <div className="h-6 bg-white/5 rounded-md w-3/4 mb-3"></div>
-               <div className="h-4 bg-white/5 rounded-md w-1/2 mb-8"></div>
-               <div className="flex gap-2">
-                 <div className="h-10 bg-white/5 rounded-full w-24"></div>
-                 <div className="h-10 bg-white/5 rounded-full w-24 ml-auto"></div>
+            <div key={i} className="glassmorphism rounded-2xl h-[420px] border border-white/5 p-8 space-y-6">
+               <Skeleton variant="rectangular" height={160} className="rounded-xl" />
+               <Skeleton variant="text" width="80%" height={28} className="rounded-lg" />
+               <Skeleton variant="text" width="60%" height={16} className="rounded-md" />
+               <div className="flex gap-2 pt-4">
+                  <Skeleton variant="rectangular" width={60} height={20} className="rounded-md" />
+                  <Skeleton variant="rectangular" width={60} height={20} className="rounded-md" />
+                  <Skeleton variant="rectangular" width={60} height={20} className="rounded-md" />
+               </div>
+               <div className="flex justify-between items-center mt-auto pt-4 border-t border-white/5">
+                  <Skeleton variant="text" width={100} height={32} className="rounded-xl" />
+                  <Skeleton variant="text" width={60} height={16} className="rounded-lg" />
                </div>
             </div>
           ))

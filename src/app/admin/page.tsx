@@ -4,6 +4,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useFirestoreRealtime } from '@/hooks/useFirestore';
 import { getUserProfile } from '@/services/firestore';
+import AdminSkeleton from '@/components/AdminSkeleton';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 const TABS = ['Overview', 'Projects', 'Orders', 'Custom Requests', 'Users', 'Diagnostics'] as const;
 type Tab = (typeof TABS)[number];
@@ -131,14 +133,7 @@ export default function AdminPanel() {
 
   // Loading state
   if (authLoading || isAuthorized === null) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-brand-purple border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-gray-400 text-sm font-medium uppercase tracking-widest">Verifying Admin Access...</p>
-        </div>
-      </div>
-    );
+    return <AdminSkeleton />;
   }
 
   // Final check to prevent any UI leaks
@@ -772,11 +767,17 @@ function DiagnosticsPanel() {
             <div className="flex justify-between items-center mb-4">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">{service.replace('_', ' ')}</span>
               {res.status === 'loading' ? (
-                <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                <div className="w-5 h-5 rounded-full border-2 border-white/5 border-t-brand-purple animate-spin" />
               ) : res.status === 'success' ? (
-                <span className="text-green-400 text-xs font-bold">● ONLINE</span>
+                <div className="flex items-center gap-1.5">
+                   <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.5)] animate-pulse" />
+                   <span className="text-green-400 text-[10px] font-bold tracking-widest">ONLINE</span>
+                </div>
               ) : (
-                <span className="text-red-400 text-xs font-bold">● FAILURE</span>
+                <div className="flex items-center gap-1.5">
+                   <div className="w-2 h-2 rounded-full bg-red-400 shadow-[0_0_10px_rgba(248,113,113,0.5)]" />
+                   <span className="text-red-400 text-[10px] font-bold tracking-widest">FAILURE</span>
+                </div>
               )}
             </div>
             <p className={`text-sm font-medium ${res.status === 'error' ? 'text-red-300' : 'text-white'}`}>{res.message}</p>

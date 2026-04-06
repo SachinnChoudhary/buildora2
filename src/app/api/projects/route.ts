@@ -41,7 +41,13 @@ export async function GET(request: Request) {
         throw new Error('Supabase project list is empty. Falling back to Firebase.');
       }
       
-      return NextResponse.json({ success: true, count: projects.length, data: projects });
+      // Combine with local mock data to ensure catalog isn't barren during testing
+      const mockFallback = filterProjects({ domain, difficulty, featured, search });
+      const combinedProjects = [...projects, ...mockFallback];
+      // remove duplicates by ID just in case
+      const uniqueProjects = Array.from(new Map(combinedProjects.map(p => [p.id, p])).values());
+      
+      return NextResponse.json({ success: true, count: uniqueProjects.length, data: uniqueProjects });
     } catch (e) {
       console.warn('Supabase fetch returned 0 items or failed, falling back to Firebase:', e);
     }
@@ -79,6 +85,11 @@ export async function GET(request: Request) {
       if (projects.length === 0) {
         throw new Error('No projects found in Firebase. Falling back to local mock data.');
       }
+      
+      // Combine with local mock data for aesthetic population 
+      const mockFallback = filterProjects({ domain, difficulty, featured, search });
+      const combinedProjects = [...projects, ...mockFallback];
+      projects = Array.from(new Map(combinedProjects.map(p => [p.id, p])).values());
     } catch (error) {
       console.error('Error fetching projects from Firestore:', error);
       // Fallback to local filtering

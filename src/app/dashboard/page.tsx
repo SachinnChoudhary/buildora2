@@ -3,6 +3,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import DashboardSkeleton from '@/components/DashboardSkeleton';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 interface Order {
   id: string;
@@ -73,11 +75,7 @@ export default function DashboardPage() {
   }, [user]);
 
   if (loading || !user) {
-    return (
-      <div className="min-h-[80vh] flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-t-2 border-brand-purple animate-spin"></div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   const getProjectDetails = (projectId: string) => {
@@ -170,8 +168,8 @@ export default function DashboardPage() {
           </div>
           
           {isLoading ? (
-            <div className="flex items-center justify-center h-60 glassmorphism rounded-3xl">
-              <div className="w-10 h-10 rounded-full border-t-2 border-brand-purple animate-spin"></div>
+            <div className="glassmorphism rounded-3xl p-12 border border-white/10">
+              <LoadingSpinner label="Calibrating Engineering Lab..." size="lg" />
             </div>
           ) : orders.length === 0 && customRequests.length === 0 ? (
             <div className="glassmorphism rounded-3xl p-16 text-center border border-white/10 relative overflow-hidden">

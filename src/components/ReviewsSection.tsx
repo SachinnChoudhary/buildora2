@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import RatingStars from './RatingStars';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, User, Calendar, Send, Star, CheckCircle } from 'lucide-react';
+import Skeleton from './Skeleton';
 
 interface Review {
   id: string;
@@ -102,7 +103,22 @@ export default function ReviewsSection({ projectId }: ReviewsSectionProps) {
         {/* Reviews List */}
         <div className="lg:col-span-12 space-y-6">
           <AnimatePresence mode="popLayout">
-            {reviews.length === 0 ? (
+            {loading ? (
+              // Loading skeletons for reviews
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="glassmorphism p-6 rounded-2xl border border-white/5 space-y-4">
+                  <div className="flex gap-4">
+                    <Skeleton variant="circular" width={40} height={40} />
+                    <div className="space-y-2 flex-grow">
+                      <Skeleton variant="text" width={120} height={16} className="rounded-md" />
+                      <Skeleton variant="text" width={180} height={12} className="rounded-md" />
+                    </div>
+                  </div>
+                  <Skeleton variant="text" height={20} className="rounded-lg" />
+                  <Skeleton variant="text" width="90%" height={20} className="rounded-lg opacity-50" />
+                </div>
+              ))
+            ) : reviews.length === 0 ? (
               <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
