@@ -75,13 +75,15 @@ export async function POST(request: Request) {
       });
 
       const transactionId = `TXN_${orderRef.id}`;
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+      const vercelProdUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : null;
+      const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || vercelProdUrl || vercelUrl || 'http://localhost:3000';
 
       const data = {
         merchantId: PHONEPE_MERCHANT_ID,
         merchantTransactionId: transactionId,
         merchantUserId: userId,
-        amount: amount * 100, // Amount in paise
+        amount: Math.round(amount * 100), // Amount in paise MUST be integer
         redirectUrl: `${baseUrl}/projects/${projectId}?success=true`,
         redirectMode: 'REDIRECT',
         callbackUrl: `${baseUrl}/api/webhooks/phonepe`,
@@ -143,7 +145,10 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Checkout error:', error);
     return NextResponse.json(
-      { success: false, error: 'Checkout session creation failed' },
+      { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Checkout session creation failed' 
+      },
       { status: 500 }
     );
   }

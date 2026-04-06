@@ -74,7 +74,7 @@ export default function Home() {
       {/* ════════════════════════════════════════════ */}
       {/*  HERO                                        */}
       {/* ════════════════════════════════════════════ */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center text-center px-6 grid-bg radial-rings overflow-hidden">
+      <section className="relative min-h-[90vh] flex flex-col items-center pt-12 pb-20 text-center px-12 grid-bg radial-rings overflow-hidden">
         {/* ambient blobs */}
         <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] bg-brand-purple/10 blur-[160px] rounded-full -z-10" />
         <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-brand-orange/8 blur-[140px] rounded-full -z-10" />
@@ -92,7 +92,7 @@ export default function Home() {
         </Reveal>
 
         <Reveal delay={100}>
-          <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-[5.5rem] font-black tracking-tight leading-[1.05] max-w-5xl mb-6 sm:mb-8 uppercase">
+          <h1 className="text-5xl sm:text-6xl md:text-8xl lg:text-[6.5rem] font-black tracking-tight leading-[1.05] max-w-5xl mb-6 sm:mb-8 uppercase">
             THE FUTURE OF<br />
             <span className="text-gradient">PRODUCTION-READY</span><br />
             STUDENT PROJECTS
@@ -100,13 +100,13 @@ export default function Home() {
         </Reveal>
 
         <Reveal delay={200}>
-          <p className="text-xs sm:text-sm uppercase tracking-[0.25em] text-gray-400 font-medium mb-6">
+          <p className="text-sm sm:text-base uppercase tracking-[0.25em] text-gray-400 font-medium mb-6">
             WHERE REAL OUTCOMES ARE PRIORITIZED
           </p>
         </Reveal>
 
         <Reveal delay={300}>
-          <p className="text-gray-400 text-base md:text-lg max-w-2xl mb-4 leading-relaxed">
+          <p className="text-gray-400 text-lg md:text-xl max-w-2xl mb-6 leading-relaxed">
             Buildora enables B.Tech students to discover, purchase, and deploy
             production-grade projects with clarity — before time and effort are wasted.
           </p>
@@ -120,29 +120,23 @@ export default function Home() {
 
         <Reveal delay={400}>
           <Link href="/projects" className="btn-gradient">
-            GET EARLY ACCESS
+            EXPLORE PROJECTS
           </Link>
         </Reveal>
 
         <Reveal delay={500}>
           <p className="text-gray-500 text-xs mt-6 tracking-wider">
-            Early access for our first members • Limited beta availability • No commitment required
+            Production-grade projects • Verified code quality • Deployment-ready guides
           </p>
         </Reveal>
 
-        {/* scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-gray-600">
-          <span className="text-[10px] uppercase tracking-[0.3em]">Scroll</span>
-          <div className="w-5 h-8 rounded-full border border-gray-700 flex justify-center pt-2">
-            <div className="w-1 h-1.5 bg-gray-500 rounded-full animate-bounce" />
-          </div>
-        </div>
+
       </section>
 
       {/* ════════════════════════════════════════════ */}
       {/*  THE TRANSFORMATION                          */}
       {/* ════════════════════════════════════════════ */}
-      <section className="relative py-32 px-6 overflow-hidden">
+      <section className="relative py-20 px-8 overflow-hidden">
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-transparent via-brand-purple/[0.02] to-transparent" />
         {/* giant bg text */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10 select-none pointer-events-none whitespace-nowrap">
@@ -155,7 +149,7 @@ export default function Home() {
           </Reveal>
 
           <Reveal delay={100}>
-            <h2 className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1] mb-6">
+            <h2 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[1.1] mb-6">
               Moving from<br />
               <span className="font-accent text-gray-500 normal-case">Accidental</span><br />
               to <span className="gradient-underline">Intentional Growth.</span>
@@ -163,8 +157,8 @@ export default function Home() {
           </Reveal>
 
           <Reveal delay={200}>
-            <div className="glassmorphism max-w-2xl mx-auto p-8 md:p-10 rounded-2xl mt-12">
-              <p className="text-brand-purple text-lg md:text-xl leading-relaxed font-medium">
+            <div className="glassmorphism max-w-2xl mx-auto p-12 md:p-16 rounded-2xl mt-12">
+              <p className="text-brand-purple text-xl md:text-2xl leading-relaxed font-medium">
                 Buildora adds structure to the creative spark, turning chaotic
                 academic panic into measurable, deployable outcomes.
               </p>
@@ -176,8 +170,8 @@ export default function Home() {
       {/* ════════════════════════════════════════════ */}
       {/*  PROOF OF VALUE — 2 columns                  */}
       {/* ════════════════════════════════════════════ */}
-      <section className="py-24 px-6">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-8">
+      <section className="py-16 px-12">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-20 md:gap-12">
           {[
             { title: 'Production-Ready Code', desc: 'Every project ships with clean architecture, typed APIs, Docker configs, and deployment guides. No more spaghetti.' },
             { title: 'Verified Outcomes', desc: 'A curated ecosystem of projects and mentors who value quality over quantity. Buildora-verified certificates for every build.' },
@@ -196,27 +190,27 @@ export default function Home() {
       {/* ════════════════════════════════════════════ */}
       {/*  THE REALITY — Pain Points                   */}
       {/* ════════════════════════════════════════════ */}
-      <section className="py-28 px-6 relative overflow-hidden">
+      <section className="py-20 px-8 relative overflow-hidden">
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-transparent via-brand-orange/[0.02] to-transparent" />
         <div className="max-w-5xl mx-auto text-center">
           <Reveal>
             <span className="pill-badge mb-10">WHAT WE SOLVE</span>
           </Reveal>
           <Reveal delay={100}>
-            <h2 className="text-3xl md:text-5xl font-black tracking-[0.1em] uppercase mb-4 text-gray-300">
+            <h2 className="text-4xl md:text-6xl font-black tracking-[0.1em] uppercase mb-6 text-gray-300">
               THE REALITY
             </h2>
-            <div className="line-divider mx-auto mb-16" />
+            <div className="line-divider mx-auto mb-12" />
           </Reveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {PAIN_POINTS.map((p, i) => (
               <Reveal key={p.title} delay={i * 120}>
-                <div className="glassmorphism p-8 rounded-2xl text-left h-full hover:border-brand-purple/20 transition-all duration-500">
-                  <div className="w-10 h-10 rounded-full border border-brand-purple/30 flex items-center justify-center mb-6">
+                <div className="glassmorphism p-12 rounded-2xl text-left h-full hover:border-brand-purple/20 transition-all duration-500">
+                  <div className="w-10 h-10 rounded-full border border-brand-purple/30 flex items-center justify-center mb-10">
                     <span className="text-brand-purple font-bold text-sm">0{i + 1}</span>
                   </div>
-                  <h4 className="text-xl font-bold text-white mb-3">{p.title}</h4>
+                  <h4 className="text-xl font-bold text-white mb-6">{p.title}</h4>
                   <p className="text-gray-400 text-sm leading-relaxed">{p.desc}</p>
                 </div>
               </Reveal>
@@ -228,7 +222,7 @@ export default function Home() {
       {/* ════════════════════════════════════════════ */}
       {/*  HOW IT WORKS                                */}
       {/* ════════════════════════════════════════════ */}
-      <section className="py-28 px-6 relative grid-bg radial-rings overflow-hidden">
+      <section className="py-20 px-8 relative grid-bg radial-rings overflow-hidden">
         <div className="max-w-5xl mx-auto text-center">
           <Reveal>
             <span className="pill-badge mb-10">
@@ -237,22 +231,22 @@ export default function Home() {
           </Reveal>
 
           <Reveal delay={100}>
-            <h2 className="text-4xl md:text-6xl font-black tracking-tight mb-4">
+            <h2 className="text-5xl md:text-7xl font-black tracking-tight mb-4">
               How It Works for <span className="text-gradient font-accent normal-case">Students</span>
             </h2>
           </Reveal>
           <Reveal delay={150}>
-            <p className="text-gray-400 max-w-xl mx-auto mb-16 leading-relaxed">
+            <p className="text-gray-400 text-lg max-w-xl mx-auto mb-12 leading-relaxed">
               Before any real work begins, we give students a clear path from
               first discovery to verified deployment.
             </p>
           </Reveal>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
             {STEPS.map((s, i) => (
               <Reveal key={s.n} delay={i * 120}>
                 <div className="flex flex-col items-center text-center">
-                  <div className="w-14 h-14 rounded-full border-2 border-brand-purple/40 flex items-center justify-center mb-6 bg-brand-purple/10">
+                  <div className="w-14 h-14 rounded-full border-2 border-brand-purple/40 flex items-center justify-center mb-10 bg-brand-purple/10">
                     <span className="text-brand-orange font-bold text-sm">{s.n}</span>
                   </div>
                   <h4 className="text-lg font-bold text-white mb-2">{s.title}</h4>
@@ -267,14 +261,14 @@ export default function Home() {
       {/* ════════════════════════════════════════════ */}
       {/*  FEATURED PROJECTS                           */}
       {/* ════════════════════════════════════════════ */}
-      <section className="py-28 px-6">
+      <section className="py-20 px-12">
         <div className="max-w-6xl mx-auto">
           <Reveal>
             <span className="pill-badge mb-10">EXPLORE THE CATALOG</span>
           </Reveal>
           <Reveal delay={100}>
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-14 gap-4">
-              <h2 className="text-4xl md:text-5xl font-black tracking-tight">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
+              <h2 className="text-5xl md:text-6xl font-black tracking-tight">
                 Featured <span className="text-gradient">Projects</span>
               </h2>
               <Link href="/projects" className="text-brand-purple hover:text-white transition-colors font-semibold text-sm uppercase tracking-wider">
@@ -283,11 +277,11 @@ export default function Home() {
             </div>
           </Reveal>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
             {PROJECTS.map((p, i) => (
               <Reveal key={p.id} delay={i * 100}>
                 <Link href={`/projects/${p.id}`} className="block group">
-                  <div className="glassmorphism rounded-2xl p-8 hover:border-brand-purple/30 transition-all duration-500 relative overflow-hidden h-full">
+                  <div className="glassmorphism rounded-2xl p-12 hover:border-brand-purple/30 transition-all duration-500 relative overflow-hidden h-full">
                     {/* tag */}
                     <span className={`absolute top-6 right-6 text-[10px] font-bold tracking-[0.2em] uppercase px-3 py-1 rounded-full border ${p.tag === 'MAJOR' ? 'text-brand-orange border-brand-orange/30 bg-brand-orange/10' : 'text-brand-purple border-brand-purple/30 bg-brand-purple/10'}`}>
                       {p.tag}
@@ -310,18 +304,18 @@ export default function Home() {
       {/* ════════════════════════════════════════════ */}
       {/*  CUSTOM PROJECT CTA                          */}
       {/* ════════════════════════════════════════════ */}
-      <section className="py-24 px-6 relative overflow-hidden">
+      <section className="py-16 px-12 relative overflow-hidden">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
         <div className="max-w-5xl mx-auto">
           <Reveal>
-            <div className="glassmorphism p-10 md:p-16 rounded-[2.5rem] border border-white/10 relative overflow-hidden group">
+            <div className="glassmorphism p-12 md:p-24 rounded-[3rem] border border-white/10 relative overflow-hidden group">
                {/* background glow */}
                <div className="absolute -top-24 -right-24 w-64 h-64 bg-brand-orange/20 blur-[100px] rounded-full group-hover:bg-brand-orange/30 transition-all duration-700 pointer-events-none" />
                <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-brand-purple/10 blur-[120px] rounded-full group-hover:bg-brand-purple/20 transition-all duration-700 pointer-events-none" />
                
-               <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-10">
+               <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-16">
                   <div className="text-center md:text-left">
-                     <span className="text-[10px] font-bold text-brand-purple uppercase tracking-[0.3em] mb-4 block">CAN'T FIND WHAT YOU NEED?</span>
+                     <span className="text-[10px] font-bold text-brand-purple uppercase tracking-[0.3em] mb-6 block">CAN'T FIND WHAT YOU NEED?</span>
                      <h2 className="text-3xl md:text-5xl font-black text-white mb-6 uppercase tracking-tight">
                         REQUEST A <span className="text-gradient">CUSTOM BUILD</span>
                      </h2>
@@ -340,40 +334,41 @@ export default function Home() {
       </section>
 
       {/* ════════════════════════════════════════════ */}
-      {/*  EARLY ACCESS BENEFITS                       */}
+      {/*  PLATFORM BENEFITS                            */}
       {/* ════════════════════════════════════════════ */}
-      <section className="py-28 px-6 relative overflow-hidden">
+      <section className="py-20 px-12 relative overflow-hidden">
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-brand-purple/[0.02] to-brand-orange/[0.02]" />
         <div className="max-w-5xl mx-auto text-center">
           <Reveal>
             <span className="pill-badge mb-10">
               <span className="pulse-dot" />
-              EARLY ACCESS BENEFITS
+              PLATFORM BENEFITS
             </span>
           </Reveal>
           <Reveal delay={100}>
-            <h2 className="text-4xl md:text-6xl font-black tracking-tight mb-4">
-              Why join <span className="font-accent text-gradient normal-case">Early.</span>
+            <h2 className="text-5xl md:text-7xl font-black tracking-tight mb-4">
+              Everything you need to <span className="font-accent text-gradient normal-case">Succeed.</span>
             </h2>
           </Reveal>
           <Reveal delay={150}>
-            <p className="text-gray-400 max-w-2xl mx-auto mb-16 leading-relaxed">
-              Limited spots. First students and colleges get zero platform fees,
-              priority support, and early access to the ecosystem. Join now — before the waitlist grows.
+            <p className="text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed">
+              No waitlists. Get instant access to zero platform fees,
+              priority support, and a growing ecosystem of production-ready projects.
+              Build your future today.
             </p>
           </Reveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             {/* Students card */}
             <Reveal delay={200}>
-              <div className="glassmorphism rounded-2xl p-8 md:p-10 text-left">
-                <h3 className="text-xl font-black uppercase tracking-[0.15em] text-white mb-2">Students</h3>
-                <div className="line-divider mb-8" />
-                <div className="space-y-6">
+              <div className="glassmorphism rounded-2xl p-12 md:p-16 text-left">
+                <h3 className="text-xl font-black uppercase tracking-[0.15em] text-white mb-4">Students</h3>
+                <div className="line-divider mb-12" />
+                <div className="space-y-10">
                   {[
                     ['Free starter project', 'Access to 1 free project instantly.'],
                     ['AI Mentor access', 'Unlimited AI debugging and guidance.'],
-                    ['Priority support', 'Faster response times during beta.'],
+                    ['Priority support', 'Dedicated support on every build.'],
                     ['Resume builder', 'Auto-generate portfolio from completed projects.'],
                   ].map(([t, d]) => (
                     <div key={t}>
@@ -387,15 +382,15 @@ export default function Home() {
 
             {/* Colleges card */}
             <Reveal delay={300}>
-              <div className="glassmorphism rounded-2xl p-8 md:p-10 text-left">
-                <h3 className="text-xl font-black uppercase tracking-[0.15em] text-white mb-2">Colleges</h3>
-                <div className="line-divider mb-8" />
-                <div className="space-y-6">
+              <div className="glassmorphism rounded-2xl p-12 md:p-16 text-left">
+                <h3 className="text-xl font-black uppercase tracking-[0.15em] text-white mb-4">Colleges</h3>
+                <div className="line-divider mb-12" />
+                <div className="space-y-10">
                   {[
-                    ['Student pool', 'Access to early student enrollment tools.'],
-                    ['Reduced costs', 'Reduced licensing costs during beta.'],
+                    ['Student pool', 'Access to verified student enrollment tools.'],
+                    ['Reduced costs', 'Reduced licensing costs for institutions.'],
                     ['Priority onboarding', 'Dedicated account manager setup.'],
-                    ['Analytics dashboard', 'Early access to performance tracking.'],
+                    ['Analytics dashboard', 'Deep-dive performance tracking.'],
                   ].map(([t, d]) => (
                     <div key={t}>
                       <p className="text-white font-bold text-sm mb-0.5">{t}</p>
@@ -412,26 +407,26 @@ export default function Home() {
       {/* ════════════════════════════════════════════ */}
       {/*  TESTIMONIALS                                */}
       {/* ════════════════════════════════════════════ */}
-      <section className="py-28 px-6">
+      <section className="py-20 px-12">
         <div className="max-w-5xl mx-auto text-center">
           <Reveal>
             <span className="pill-badge mb-10">SOCIAL PROOF</span>
           </Reveal>
           <Reveal delay={100}>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-16">
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-12">
               Students <span className="text-gradient">Love</span> It
             </h2>
           </Reveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             {[
               { name: 'Aarav S.', college: 'VIT Vellore', text: 'The code quality was production-grade. The AI mentor helped me understand every single line of the architecture.' },
               { name: 'Priya M.', college: 'SRM Chennai', text: 'I requested a custom ML project and got it delivered milestone-by-milestone. My guide was genuinely impressed.' },
               { name: 'Rohit K.', college: 'BITS Pilani', text: 'I actually have a live project link on my resume now. Got 3 interview calls within a week.' },
             ].map((t, i) => (
               <Reveal key={t.name} delay={i * 100}>
-                <div className="glassmorphism p-8 rounded-2xl text-left h-full flex flex-col">
-                  <div className="flex gap-1 mb-5">
+                <div className="glassmorphism p-12 rounded-2xl text-left h-full flex flex-col">
+                  <div className="flex gap-1 mb-8">
                     {[...Array(5)].map((_, j) => (
                       <svg key={j} className="w-4 h-4 text-brand-orange" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
                     ))}
@@ -454,13 +449,13 @@ export default function Home() {
       {/* ════════════════════════════════════════════ */}
       {/*  FINAL CTA                                   */}
       {/* ════════════════════════════════════════════ */}
-      <section className="relative py-36 px-6 grid-bg overflow-hidden">
+      <section className="relative py-24 px-12 grid-bg overflow-hidden">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-brand-purple/8 blur-[160px] rounded-full -z-10" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-brand-orange/5 blur-[140px] rounded-full ml-32 -z-10" />
 
         <div className="max-w-4xl mx-auto text-center relative">
           <Reveal>
-            <h2 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black uppercase tracking-tight leading-[1] mb-8">
+            <h2 className="text-5xl sm:text-6xl md:text-8xl lg:text-9xl font-black uppercase tracking-tight leading-[1] mb-8">
               STOP SEARCHING.<br />
               <span className="text-gradient">START BUILDING.</span>
             </h2>
