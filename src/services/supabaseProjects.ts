@@ -1,6 +1,5 @@
 import { supabase, getPublicUrl } from '@/lib/supabase';
 import { auth } from '@/lib/firebase';
-import { v4 as uuidv4 } from 'uuid';
 import { validate as isUuid } from 'uuid';
 
 export async function uploadToSupabaseBucket(file: File, folder: string, projectId: string) {
@@ -20,47 +19,31 @@ export async function uploadToSupabaseBucket(file: File, folder: string, project
   return getPublicUrl(filePath);
 }
 
+// Ensure `id` is not included in projectData before inserting into the database
 export async function createSupabaseProject(projectData: any) {
-  const projectId = uuidv4();
-  if (!isUuid(projectId)) {
-    throw new Error(`Invalid UUID: ${projectId}`);
-  }
   const currentUser = auth.currentUser;
   if (!currentUser) throw new Error('User must be authenticated to create a project');
 
-  let thumbnailUrl = '';
-  let sourceUrl = '';
-  let repoUrl = '';
+  // Remove fields that shouldn't go into the database
+  if ('id' in projectData) delete projectData.id;
 
-  // 1. Upload files if they exist (all optional)
-  if (projectData.thumbnailFile) {
-    thumbnailUrl = await uploadToSupabaseBucket(projectData.thumbnailFile, 'thumbnail', projectId);
-  }
-
-  if (projectData.sourceFile && projectData.sourceType === 'zip') {
-    sourceUrl = await uploadToSupabaseBucket(projectData.sourceFile, 'source', projectId);
-  }
-
-  if (projectData.repoUrl) {
-    repoUrl = projectData.repoUrl;
-  }
-
-  // 2. Insert into Postgres with owner_id set to current user
-  const { sourceFile, thumbnailFile, techStack, tags, originalPrice, externalRepoUrl, repoUrl: _repoUrl, sourceType, ...rest } = projectData;
-  // Remove externalRepoUrl, repoUrl, and sourceType from rest if present
+  const { sourceFile, thumbnailFile, techStack, tags, originalPrice, externalRepoUrl, repoUrl: formRepoUrl, sourceType, updatedAt, ...rest } = projectData;
+  // Clean any remaining client-only fields from rest
   if ('externalRepoUrl' in rest) delete rest.externalRepoUrl;
   if ('repoUrl' in rest) delete rest.repoUrl;
   if ('sourceType' in rest) delete rest.sourceType;
+  if ('updatedAt' in rest) delete rest.updatedAt;
+
+  // 1. Insert DB row first to get a project ID
   const { data, error } = await supabase
     .from('projects')
     .insert([{
       ...rest,
-      id: projectId,
       owner_id: currentUser.uid,
       original_price: originalPrice || rest.price || 0,
-      thumbnail_url: thumbnailUrl || null,
-      source_url: sourceUrl || '',
-      repo_url: repoUrl || '',
+      thumbnail_url: null,
+      source_url: '',
+      repo_url: formRepoUrl || externalRepoUrl || '',
       tech_stack: techStack,
       tags: tags,
       visibility: 'public',
@@ -69,7 +52,40 @@ export async function createSupabaseProject(projectData: any) {
     .select();
 
   if (error) throw error;
-  return data[0];
+  const project = data[0];
+  const projectId = project.id;
+
+  // 2. Upload files using the real project ID
+  let thumbnailUrl = '';
+  let sourceUrl = '';
+
+  if (thumbnailFile) {
+    thumbnailUrl = await uploadToSupabaseBucket(thumbnailFile, 'thumbnail', projectId);
+  }
+
+  if (sourceFile && sourceType === 'zip') {
+    sourceUrl = await uploadToSupabaseBucket(sourceFile, 'source', projectId);
+  }
+
+  // 3. Update the row with file URLs if any were uploaded
+  if (thumbnailUrl || sourceUrl) {
+    const updates: Record<string, string> = {};
+    if (thumbnailUrl) updates.thumbnail_url = thumbnailUrl;
+    if (sourceUrl) updates.source_url = sourceUrl;
+
+    const { error: updateError } = await supabase
+      .from('projects')
+      .update(updates)
+      .eq('id', projectId);
+
+    if (updateError) {
+      console.error('Failed to update file URLs:', updateError);
+    } else {
+      Object.assign(project, updates);
+    }
+  }
+
+  return project;
 }
 
 export async function updateSupabaseProject(projectId: string, projectData: any) {
@@ -79,12 +95,15 @@ export async function updateSupabaseProject(projectId: string, projectData: any)
   const currentUser = auth.currentUser;
   if (!currentUser) throw new Error('User must be authenticated to update a project');
 
-  // Remove sourceType from destructuring
-  const { sourceFile, thumbnailFile, techStack, tags, originalPrice, externalRepoUrl, repoUrl: _repoUrl, sourceType, ...rest } = projectData;
-  // Remove externalRepoUrl, repoUrl, and sourceType from rest if present
+  // Remove client-only fields from destructuring
+  const { sourceFile, thumbnailFile, techStack, tags, originalPrice, externalRepoUrl, repoUrl: _repoUrl, sourceType, updatedAt, thumbnailUrl: _thumbUrl, sourceUrl: _srcUrl, ...rest } = projectData;
+  // Remove any remaining client-only fields from rest
   if ('externalRepoUrl' in rest) delete rest.externalRepoUrl;
   if ('repoUrl' in rest) delete rest.repoUrl;
   if ('sourceType' in rest) delete rest.sourceType;
+  if ('updatedAt' in rest) delete rest.updatedAt;
+  if ('thumbnailUrl' in rest) delete rest.thumbnailUrl;
+  if ('sourceUrl' in rest) delete rest.sourceUrl;
   let thumbnailUrl = projectData.thumbnailUrl;
   let sourceUrl = projectData.sourceUrl || '';
   let repoUrl = projectData.repoUrl || '';
