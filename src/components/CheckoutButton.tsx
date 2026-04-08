@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Loader2, CreditCard } from 'lucide-react';
@@ -14,6 +14,16 @@ export default function CheckoutButton({ projectId, amount, projectTitle }: Chec
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    // Initialize Cashfree script on mount
+    if (typeof window !== 'undefined' && !(window as any).Cashfree) {
+      const script = document.createElement('script');
+      script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
 
   const handleCheckout = async () => {
     if (authLoading) return;
@@ -40,8 +50,17 @@ export default function CheckoutButton({ projectId, amount, projectTitle }: Chec
 
       const data = await response.json();
 
-      if (data.success && data.data.url) {
-        // Redirection to Stripe (or mock success URL)
+      if (data.success && data.data.paymentSessionId) {
+        // Redirection to Cashfree payment page
+        const cf = (window as any).Cashfree({
+          mode: data.data.env === 'PROD' ? 'production' : 'sandbox'
+        });
+        cf.checkout({
+          paymentSessionId: data.data.paymentSessionId,
+          redirectTarget: "_self",
+        });
+      } else if (data.success && data.data.url) {
+        // Mock fallback
         window.location.href = data.data.url;
       } else {
         alert(data.error || 'Failed to initiate checkout. Please try again.');

@@ -3,11 +3,10 @@ import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
 
-const PHONEPE_MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID || 'PGTESTPAYUAT';
-const PHONEPE_SALT_KEY = process.env.PHONEPE_SALT_KEY || '099eb0cd-02cf-4e2a-8aca-3e6c6aff0399';
-const PHONEPE_SALT_INDEX = process.env.PHONEPE_SALT_INDEX || '1';
-const PHONEPE_ENV = process.env.PHONEPE_ENV || 'UAT';
-const PHONEPE_HOST = PHONEPE_ENV === 'PROD' ? 'https://api.phonepe.com/apis/hermes' : 'https://api-preprod.phonepe.com/apis/pg-sandbox';
+const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID || 'TEST_DUMMY_ID';
+const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY || 'TEST_DUMMY_SECRET';
+const CASHFREE_ENV = process.env.CASHFREE_ENV || 'SANDBOX';
+const CASHFREE_HOST = CASHFREE_ENV === 'PROD' ? 'https://api.cashfree.com/pg' : 'https://sandbox.cashfree.com/pg';
 // Mock orders store for local fallback
 const mockOrders: Array<{
   id: string;
@@ -60,13 +59,16 @@ export async function POST(request: Request) {
       );
     }
 
-    // Use PhonePe and Firestore if configured
+    // Use Cashfree and Firestore if configured
     if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY) {
       const { getAdminDb } = await import('@/lib/firebase-admin');
       const adminDb = getAdminDb();
 
       // 1. Create order in Firestore (status: pending)
-      const orderRef = await adminDb.collection('orders').add({
+      const orderIdNumber = Math.floor(100000 + Math.random() * 900000);
+      const customOrderId = `BUILD-${Date.now().toString().slice(-4)}${orderIdNumber.toString().slice(-2)}`;
+
+      await adminDb.collection('orders').doc(customOrderId).set({
         userId,
         projectId,
         amount,
@@ -74,57 +76,54 @@ export async function POST(request: Request) {
         createdAt: new Date().toISOString(),
       });
 
-      const transactionId = `TXN_${orderRef.id}`;
+      const transactionId = customOrderId;
+      const protocol = request.headers.get('x-forwarded-proto') || 'http';
+      const host = request.headers.get('host') || 'localhost:3000';
       const vercelProdUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : null;
       const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || vercelProdUrl || vercelUrl || 'http://localhost:3000';
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL && !process.env.NEXT_PUBLIC_BASE_URL.includes('localhost')
+        ? process.env.NEXT_PUBLIC_BASE_URL
+        : vercelProdUrl || vercelUrl || `${protocol}://${host}`;
 
       const data = {
-        merchantId: PHONEPE_MERCHANT_ID,
-        merchantTransactionId: transactionId,
-        merchantUserId: userId,
-        amount: Math.round(amount * 100), // Amount in paise MUST be integer
-        redirectUrl: `${baseUrl}/projects/${projectId}?success=true`,
-        redirectMode: 'REDIRECT',
-        callbackUrl: `${baseUrl}/api/webhooks/phonepe`,
-        mobileNumber: '9999999999',
-        paymentInstrument: {
-          type: 'PAY_PAGE',
+        order_id: transactionId,
+        order_amount: amount,
+        order_currency: "INR",
+        customer_details: {
+          customer_id: userId.substring(0, 50),
+          customer_phone: "9999999999",
         },
+        order_meta: {
+          return_url: `${baseUrl}/api/orders/return?projectId=${projectId}&order_id={order_id}`,
+          notify_url: `${baseUrl}/api/webhooks/cashfree`,
+        }
       };
 
-      const payload = JSON.stringify(data);
-      const base64Payload = Buffer.from(payload).toString('base64');
-      const apiEndpoint = '/pg/v1/pay';
-
-      const stringToHash = base64Payload + apiEndpoint + PHONEPE_SALT_KEY;
-      const sha256 = crypto.createHash('sha256').update(stringToHash).digest('hex');
-      const xVerify = `${sha256}###${PHONEPE_SALT_INDEX}`;
-
-      const response = await fetch(`${PHONEPE_HOST}${apiEndpoint}`, {
+      const response = await fetch(`${CASHFREE_HOST}/orders`, {
         method: 'POST',
         headers: {
           'accept': 'application/json',
-          'Content-Type': 'application/json',
-          'X-VERIFY': xVerify,
+          'content-type': 'application/json',
+          'x-api-version': '2023-08-01',
+          'x-client-id': CASHFREE_APP_ID,
+          'x-client-secret': CASHFREE_SECRET_KEY
         },
-        body: JSON.stringify({
-          request: base64Payload,
-        }),
+        body: JSON.stringify(data),
       });
 
-      const phonePeRes = await response.json();
+      const cfRes = await response.json();
       
-      if (phonePeRes.success && phonePeRes.data?.instrumentResponse?.redirectInfo?.url) {
-        return NextResponse.json({ success: true, data: { id: orderRef.id, url: phonePeRes.data.instrumentResponse.redirectInfo.url } }, { status: 201 });
+      if (cfRes.payment_session_id) {
+        return NextResponse.json({ success: true, data: { id: customOrderId, paymentSessionId: cfRes.payment_session_id, env: CASHFREE_ENV } }, { status: 201 });
       } else {
-        throw new Error(phonePeRes.message || 'PhonePe payment initiation failed');
+        throw new Error(cfRes.message || 'Cashfree payment initiation failed');
       }
     }
 
     // --- MOCK FALLBACK ---
+    const mockOrderIdNumber = Math.floor(100000 + Math.random() * 900000);
     const newOrder = {
-      id: `ord_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      id: `BUILD-${Date.now().toString().slice(-4)}${mockOrderIdNumber.toString().slice(-2)}`,
       userId,
       projectId,
       amount,

@@ -18,7 +18,6 @@ export default function ProjectDetail() {
   
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [showCanceled, setShowCanceled] = useState(false);
 
   useEffect(() => {
@@ -40,7 +39,6 @@ export default function ProjectDetail() {
   }, [id]);
 
   useEffect(() => {
-    if (searchParams.get('success') === 'true') setShowSuccess(true);
     if (searchParams.get('canceled') === 'true') setShowCanceled(true);
   }, [searchParams]);
 
@@ -68,15 +66,6 @@ export default function ProjectDetail() {
   return (
     <main className="min-h-screen max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative">
       {/* Toast Notifications */}
-      {showSuccess && (
-        <Toast
-          type="success"
-          title="Payment Successful!"
-          message="Your project is now in your dashboard. Happy building!"
-          duration={6000}
-          onClose={() => setShowSuccess(false)}
-        />
-      )}
       {showCanceled && (
         <Toast
           type="error"
@@ -201,7 +190,7 @@ export default function ProjectDetail() {
               projectTitle={project.title} 
             />
             <p className="text-center text-[10px] text-gray-500 mb-6 leading-relaxed">
-              Secure payment via PhonePe. 14-day refund policy<br />if the code doesn&apos;t match the description.
+              Secure payment via Cashfree. 14-day refund policy<br />if the code doesn&apos;t match the description.
             </p>
 
             <div className="space-y-3 pt-4 border-t border-white/10">

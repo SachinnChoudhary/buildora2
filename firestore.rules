@@ -54,6 +54,17 @@ service cloud.firestore {
       allow create: if isAuthenticated(); 
       allow update, delete: if isAuthenticated() && isAdmin();
     }
+
+    // Custom Requests Collection
+    match /custom_requests/{requestId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.userId || 
+        isAdmin()
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && isAdmin();
+      allow delete: if isAuthenticated() && isAdmin();
+    }
     
     // Diagnostic / Health Checks
     match /system_checks/{docId} {

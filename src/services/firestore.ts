@@ -50,6 +50,14 @@ export const getUserProfile = async (uid: string) => {
   return docSnap.exists() ? docSnap.data() : null;
 };
 
+export const updateUserProfile = async (uid: string, data: Partial<any>) => {
+  const userRef = doc(db, 'users', uid);
+  await updateDoc(userRef, {
+    ...data,
+    updatedAt: serverTimestamp(),
+  });
+};
+
 /**
  * PROJECT SERVICES
  */

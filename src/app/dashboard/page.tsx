@@ -103,19 +103,7 @@ export default function DashboardPage() {
   const recommendations = getRecommendedProjects();
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 min-h-[80vh]">
-      <div className="mb-8 border-b border-white/10 pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-black text-white mb-2 uppercase tracking-tight">
-            Welcome, <span className="text-gradient">{user.displayName || user.email?.split('@')[0]}</span>
-          </h1>
-          <p className="text-gray-400">Manage your high-performance engineering projects and custom requests.</p>
-        </div>
-        <Link href="/projects" className="bg-white/10 hover:bg-white/20 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-widest text-white transition-all border border-white/10 hover:border-white/30 backdrop-blur-sm">
-          Browse Directory
-        </Link>
-      </div>
-
+    <div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 mb-12">
         {/* Welcome / Stats Widget */}
         <div className="glassmorphism p-6 sm:p-8 rounded-3xl col-span-1 lg:col-span-2 relative overflow-hidden group">

@@ -32,7 +32,7 @@ export default function AdminPanel() {
   // Live Subscriptions - Only enable once authorized
   // Live Subscriptions
   const { data: liveOrders } = useFirestoreRealtime('orders', [], { enabled: !!isAuthorized });
-  const { data: liveRequests } = useFirestoreRealtime('project_requests', [], { enabled: !!isAuthorized });
+  const [liveRequests, setLiveRequests] = useState<any[]>([]);
   const { data: liveUsers } = useFirestoreRealtime('users', [], { enabled: !!isAuthorized });
   const [liveProjects, setLiveProjects] = useState<any[]>([]);
 
@@ -46,8 +46,21 @@ export default function AdminPanel() {
     }
   };
 
+  const fetchCustomRequests = async () => {
+    try {
+      const res = await fetch('/api/custom-requests?all=true');
+      const data = await res.json();
+      if (data.success) setLiveRequests(data.data);
+    } catch (err) {
+      console.error('Failed to fetch custom requests', err);
+    }
+  };
+
   useEffect(() => {
-    if (isAuthorized) fetchSupabaseProjects();
+    if (isAuthorized) {
+      fetchSupabaseProjects();
+      fetchCustomRequests();
+    }
   }, [isAuthorized]);
 
   // Project Management State
@@ -70,6 +83,11 @@ export default function AdminPanel() {
     thumbnailFile: null as File | null
   });
   const [isUploading, setIsUploading] = useState(false);
+
+  // Order Management State
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<any>(null);
+  const [isOrderUpdating, setIsOrderUpdating] = useState(false);
 
   const toggleValue = (field: 'techStack' | 'tags', value: string) => {
     const currentValues = formData[field].split(',').map(v => v.trim()).filter(Boolean);
@@ -224,6 +242,26 @@ export default function AdminPanel() {
         console.error('Error deleting project from Supabase:', err);
         alert('Failed to delete project. You might need to check your Supabase Storage policies.');
       }
+    }
+  };
+
+  const handleOrderSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsOrderUpdating(true);
+    try {
+      const { db } = await import('@/lib/firebase');
+      const { doc, updateDoc } = await import('firebase/firestore');
+      const orderRef = doc(db, 'orders', editingOrder.id);
+      await updateDoc(orderRef, {
+        status: editingOrder.status,
+        amount: editingOrder.amount,
+      });
+      setIsOrderModalOpen(false);
+    } catch (err: any) {
+      console.error('Failed to update order', err);
+      alert('Failed to update order: ' + err.message);
+    } finally {
+      setIsOrderUpdating(false);
     }
   };
 
@@ -397,6 +435,39 @@ export default function AdminPanel() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Order Modal Backdrop */}
+      {isOrderModalOpen && editingOrder && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setIsOrderModalOpen(false)}></div>
+          <div className="relative w-full max-w-xl glassmorphism border border-white/10 rounded-2xl p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
+             <h2 className="text-2xl font-bold text-white mb-6 uppercase tracking-tight">
+               Edit Order {editingOrder.id}
+             </h2>
+             <form onSubmit={handleOrderSave} className="space-y-4">
+               <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Status</label>
+                  <select value={editingOrder.status} onChange={e => setEditingOrder({...editingOrder, status: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-brand-purple/50 transition-colors">
+                    <option value="pending" className="bg-[#0f1115]">pending</option>
+                    <option value="completed" className="bg-[#0f1115]">completed</option>
+                    <option value="refunded" className="bg-[#0f1115]">refunded</option>
+                    <option value="in_progress" className="bg-[#0f1115]">in_progress</option>
+                  </select>
+               </div>
+               <div>
+                 <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Amount (₹)</label>
+                 <input type="number" value={editingOrder.amount || 0} onChange={e => setEditingOrder({...editingOrder, amount: Number(e.target.value)})} className="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-brand-purple/50 transition-colors" />
+               </div>
+               <div className="flex justify-end gap-3 mt-8">
+                 <button type="button" onClick={() => setIsOrderModalOpen(false)} className="px-6 py-2 rounded-lg text-sm font-bold text-gray-400 hover:text-white transition-colors">CANCEL</button>
+                 <button type="submit" disabled={isOrderUpdating} className={`btn-gradient px-8 py-2 rounded-lg text-sm flex items-center gap-2 ${isOrderUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                    {isOrderUpdating ? 'SAVING...' : 'SAVE ORDER'}
+                 </button>
+               </div>
+             </form>
           </div>
         </div>
       )}
@@ -584,7 +655,7 @@ export default function AdminPanel() {
                     </td>
                     <td className="p-4 text-sm text-gray-500">{order.createdAt ? new Date(order.createdAt).toLocaleDateString() : order.date || 'N/A'}</td>
                     <td className="p-4">
-                      <button className="text-xs text-brand-purple hover:text-white transition-colors">View</button>
+                      <button onClick={() => { setEditingOrder(order); setIsOrderModalOpen(true); }} className="text-xs text-brand-purple hover:text-white transition-colors">View</button>
                     </td>
                   </tr>
                 ))}

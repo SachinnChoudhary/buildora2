@@ -9,7 +9,7 @@ export async function GET() {
   let totalUsers = 0;
   let pendingCustomRequests = 0;
 
-  // Get project count from Supabase (where projects actually live)
+  // Get project count and custom requests count from Supabase
   if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
     try {
       const { supabase } = await import('@/lib/supabase');
@@ -22,18 +22,31 @@ export async function GET() {
     } catch (e) {
       console.error('Error counting projects from Supabase:', e);
     }
+
+    // Count pending custom requests from Supabase
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      const { count, error } = await supabase
+        .from('custom_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+      if (!error && count !== null) {
+        pendingCustomRequests = count;
+      }
+    } catch (e) {
+      console.error('Error counting custom requests from Supabase:', e);
+    }
   }
 
-  // Get orders, users, custom requests from Firestore
+  // Get orders, users from Firestore
   if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY) {
     try {
       const { getAdminDb } = await import('@/lib/firebase-admin');
       const adminDb = getAdminDb();
       
-      const [ordersSnap, usersSnap, customRequestsSnap] = await Promise.all([
+      const [ordersSnap, usersSnap] = await Promise.all([
         adminDb.collection('orders').get(),
         adminDb.collection('users').get(),
-        adminDb.collection('project_requests').get()
       ]);
 
       totalRevenue = ordersSnap.docs.reduce((sum, doc) => {
@@ -43,13 +56,11 @@ export async function GET() {
 
       totalOrders = ordersSnap.size;
       totalUsers = usersSnap.size;
-      pendingCustomRequests = customRequestsSnap.docs.filter(d => d.data().status === 'pending').length;
 
       // Ensure that empty DBs still show the placeholder analytics for demonstration purposes!
       if (totalRevenue === 0) totalRevenue = 24500;
       if (totalOrders === 0) totalOrders = 15;
       if (totalUsers <= 2) totalUsers = 12; // Including test accounts
-      if (pendingCustomRequests === 0) pendingCustomRequests = 3;
 
       // Fallback: if Supabase project count failed, try Firestore 
       if (totalProjects === 0) {
