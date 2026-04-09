@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { AuthProvider } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -26,6 +27,7 @@ export default function RootLayout({
           <Footer />
           <BuildoraBot />
         </AuthProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
