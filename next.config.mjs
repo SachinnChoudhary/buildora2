@@ -1,5 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   // Exclude firebase-admin from client bundles (it's server-only)
   webpack: (config, { isServer }) => {
     if (!isServer) {

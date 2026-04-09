@@ -842,11 +842,11 @@ export default function AdminPanel() {
                         {(editingRequest.negotiationStatus || 'pending').replace(/_/g, ' ')}
                      </p>
                    )}
-                 </div>
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <div className="glassmorphism p-5 border border-brand-purple/30 rounded-xl space-y-4">
+              <div className="glassmorphism p-5 border border-brand-purple/30 rounded-xl space-y-4">
               <h4 className="text-sm font-black text-brand-purple uppercase tracking-widest flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-brand-purple animate-pulse"></span> Admin Commits & Updates
               </h4>

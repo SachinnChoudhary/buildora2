@@ -33,7 +33,7 @@ export async function GET(request: Request) {
       return `BUILD-${year}-${(num % 10000).toString().padStart(4, '0')}`;
     };
 
-    let supabaseRequests = [];
+    let supabaseRequests: any[] = [];
     if (error) {
       console.error('Error fetching custom requests from Supabase:', error);
     } else {
