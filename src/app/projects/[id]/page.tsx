@@ -87,9 +87,9 @@ export default function ProjectDetail() {
         <div className="lg:col-span-2 space-y-10">
           {/* Hero card */}
           <div className="glassmorphism p-8 md:p-10 rounded-3xl relative overflow-hidden">
-            {project.thumbnail && (
+            {(project.thumbnail || (project as any).thumbnailUrl) && (
               <div className="relative w-full h-64 md:h-80 mb-8 rounded-2xl overflow-hidden border border-white/10">
-                <Image src={project.thumbnail} alt={project.title} fill className="object-cover" />
+                <Image src={project.thumbnail || (project as any).thumbnailUrl} alt={project.title} fill className="object-cover" />
               </div>
             )}
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-purple/5 blur-[120px] rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none" />

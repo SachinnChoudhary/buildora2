@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { validate as isUuid } from 'uuid';
 
 export interface Review {
   id: string;
@@ -16,6 +17,11 @@ export type CreateReviewInput = Omit<Review, 'id' | 'created_at'>;
  * Fetch all reviews for a specific project.
  */
 export async function getProjectReviews(projectId: string): Promise<Review[]> {
+  // If not a valid UUID, don't query Supabase (prevents 22P02 error)
+  if (!projectId || !isUuid(projectId)) {
+    return [];
+  }
+
   const { data, error } = await supabase
     .from('reviews')
     .select('*')
@@ -52,6 +58,11 @@ export async function createProjectReview(review: CreateReviewInput): Promise<Re
  * Calculate the average rating for a project based on its reviews.
  */
 export async function getProjectAverageRating(projectId: string): Promise<{ average: number; count: number }> {
+  // If not a valid UUID, don't query Supabase
+  if (!projectId || !isUuid(projectId)) {
+    return { average: 0, count: 0 };
+  }
+
   const { data, error } = await supabase
     .from('reviews')
     .select('rating')

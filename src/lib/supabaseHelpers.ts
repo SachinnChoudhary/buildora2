@@ -6,7 +6,9 @@ export function mapSupabaseProject(p: any) {
   return {
     ...p,
     // Map snake_case DB columns to camelCase used by UI
-    thumbnailUrl: p.thumbnail_url || p.thumbnailUrl || '',
+    // `thumbnail` is the field the UI components use for rendering
+    thumbnail: p.thumbnail_url || p.thumbnailUrl || p.thumbnail || '',
+    thumbnailUrl: p.thumbnail_url || p.thumbnailUrl || p.thumbnail || '',
     sourceUrl: p.source_url || p.sourceUrl || '',
     repoUrl: p.repo_url || p.repoUrl || '',
     techStack: p.tech_stack || p.techStack || [],

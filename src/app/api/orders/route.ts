@@ -68,11 +68,17 @@ export async function POST(request: Request) {
       const orderIdNumber = Math.floor(100000 + Math.random() * 900000);
       const customOrderId = `BUILD-${Date.now().toString().slice(-4)}${orderIdNumber.toString().slice(-2)}`;
 
+      const { email, userName, projectTitle } = body;
+
       await adminDb.collection('orders').doc(customOrderId).set({
         userId,
         projectId,
         amount,
         status: 'pending',
+        paymentMode: 'Cashfree',
+        email: email || null,
+        userName: userName || null,
+        projectTitle: projectTitle || null,
         createdAt: new Date().toISOString(),
       });
 

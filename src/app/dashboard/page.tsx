@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import DashboardSkeleton from '@/components/DashboardSkeleton';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import Toast from '@/components/Toast';
 
 interface Order {
   id: string;
@@ -22,7 +23,17 @@ interface CustomRequest {
   deadline: string;
   createdAt: string;
   techStack?: string[];
+  adminNotes?: string;
+  adminQuote?: number | string | null;
+  userOffer?: number | string | null;
+  tokenAmount?: number | string | null;
+  negotiationStatus?: string;
 }
+
+const formatBudget = (budget: any) => {
+  if (!budget || String(budget).toLowerCase() === 'flexible') return 'Flexible';
+  return '₹' + String(budget).replace(/^[₹$\s]+/, '');
+};
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
@@ -31,6 +42,89 @@ export default function DashboardPage() {
   const [customRequests, setCustomRequests] = useState<CustomRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [allProjects, setAllProjects] = useState<any[]>([]);
+  const [counterOfferValue, setCounterOfferValue] = useState<Record<string, string>>({});
+  const [offerSubmitting, setOfferSubmitting] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const [showCounterInput, setShowCounterInput] = useState<Record<string, boolean>>({});
+
+  const acceptOffer = async (requestId: string) => {
+    setOfferSubmitting(requestId);
+    try {
+      const res = await fetch('/api/custom-requests', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: requestId, negotiationStatus: 'awaiting_token_payment' })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCustomRequests(prev => prev.map(r => r.id === requestId ? { ...r, negotiationStatus: 'awaiting_token_payment' } : r));
+        setToastType('success');
+        setToastMessage('Offer accepted! Please pay the token advance to start your build.');
+      } else {
+        setToastType('error');
+        setToastMessage('Failed to accept offer');
+      }
+    } catch {
+      setToastType('error');
+      setToastMessage('Network error');
+    } finally {
+      setOfferSubmitting(null);
+    }
+  };
+
+  const submitCounterOffer = async (requestId: string) => {
+    const offer = counterOfferValue[requestId];
+    if (!offer || isNaN(Number(offer))) return;
+    setOfferSubmitting(requestId);
+    try {
+      const res = await fetch('/api/custom-requests', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: requestId, userOffer: Number(offer), negotiationStatus: 'user_countered' })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCustomRequests(prev => prev.map(r => r.id === requestId ? { ...r, userOffer: Number(offer), negotiationStatus: 'user_countered' } : r));
+        setCounterOfferValue(prev => ({ ...prev, [requestId]: '' }));
+        setToastType('success');
+        setToastMessage('Counter offer submitted successfully!');
+      } else {
+        setToastType('error');
+        setToastMessage('Failed to submit offer');
+      }
+    } catch {
+      setToastType('error');
+      setToastMessage('Network error');
+    } finally {
+      setOfferSubmitting(null);
+    }
+  };
+
+  const rejectOffer = async (requestId: string) => {
+    setOfferSubmitting(requestId);
+    try {
+      const res = await fetch('/api/custom-requests', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: requestId, negotiationStatus: 'user_rejected' })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCustomRequests(prev => prev.map(r => r.id === requestId ? { ...r, negotiationStatus: 'user_rejected' } : r));
+        setToastType('success');
+        setToastMessage('Quote rejected.');
+      } else {
+        setToastType('error');
+        setToastMessage('Failed to reject offer');
+      }
+    } catch {
+      setToastType('error');
+      setToastMessage('Network error');
+    } finally {
+      setOfferSubmitting(null);
+    }
+  };
 
   useEffect(() => {
     if (!loading && !user) {
@@ -52,7 +146,7 @@ export default function DashboardPage() {
         }
 
         // Fetch custom requests
-        const requestsRes = await fetch(`/api/custom-requests?userId=${user.uid}`);
+        const requestsRes = await fetch(`/api/custom-requests?userId=${user.uid}`, { cache: 'no-store' });
         const requestsData = await requestsRes.json();
         if (requestsData.success) {
           setCustomRequests(requestsData.data);
@@ -124,7 +218,7 @@ export default function DashboardPage() {
               </div>
               <div className="bg-white/5 p-5 sm:p-6 rounded-2xl border border-white/10 backdrop-blur-md">
                 <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Active Build</p>
-                <p className="text-3xl sm:text-4xl font-black text-brand-purple">{customRequests.filter(r => r.status === 'in-progress').length || '-'}</p>
+                <p className="text-3xl sm:text-4xl font-black text-brand-purple">{customRequests.filter(r => r.status === 'in_progress').length || '-'}</p>
               </div>
             </div>
           </div>
@@ -240,7 +334,7 @@ export default function DashboardPage() {
                           <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">{request.title}</h3>
                           <span className={`inline-block w-fit px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest ${
                             request.status === 'pending' ? 'bg-yellow-500/20 border border-yellow-500/30 text-yellow-300' :
-                            request.status === 'in-progress' ? 'bg-blue-500/20 border border-blue-500/30 text-blue-300' :
+                            request.status === 'in_progress' ? 'bg-blue-500/20 border border-blue-500/30 text-blue-300' :
                             'bg-green-500/20 border border-green-500/30 text-green-300'
                           }`}>
                             {request.status}
@@ -249,7 +343,7 @@ export default function DashboardPage() {
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                            <div>
                               <p className="text-[9px] font-bold uppercase tracking-widest text-gray-500 mb-1">Budget</p>
-                              <p className="text-white font-bold text-sm">{request.budget}</p>
+                              <p className="text-white font-bold text-sm">{formatBudget(request.budget)}</p>
                            </div>
                            <div>
                               <p className="text-[9px] font-bold uppercase tracking-widest text-gray-500 mb-1">Timeframe</p>
@@ -262,11 +356,149 @@ export default function DashboardPage() {
                         </div>
                       </div>
 
-                      <button className="w-full py-4 bg-white/5 border border-white/10 text-center rounded-xl text-[9px] font-black uppercase tracking-widest text-gray-400 cursor-not-allowed">
-                        {request.status === 'pending' ? 'Reviewing Vision' : 
-                         request.status === 'in-progress' ? 'Engineering in Progress' : 
-                         'Build Completed'}
-                      </button>
+                      {/* Admin Notes */}
+                      {request.adminNotes && (
+                        <div className="w-full mt-2 bg-brand-purple/5 border border-brand-purple/20 p-4 rounded-xl">
+                          <p className="text-[10px] font-bold text-brand-purple uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-brand-purple animate-pulse"></span> Latest Commit / Update
+                          </p>
+                          <p className="text-gray-300 text-sm whitespace-pre-wrap">{request.adminNotes}</p>
+                        </div>
+                      )}
+
+                      {/* Negotiation / Quotation Card */}
+                      {request.adminQuote ? (
+                        <div className="w-full mt-3 bg-gradient-to-br from-brand-orange/5 to-brand-purple/5 border border-brand-orange/20 p-5 rounded-xl space-y-4">
+                          <h4 className="text-[10px] font-black text-brand-orange uppercase tracking-widest flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-brand-orange animate-pulse"></span> Project Quotation
+                          </h4>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <div>
+                              <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Quoted Cost</p>
+                              <p className="text-white font-black text-lg">₹{Number(request.adminQuote).toLocaleString('en-IN')}</p>
+                            </div>
+                            {request.tokenAmount && (
+                              <div>
+                                <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Token Advance</p>
+                                <p className="text-brand-purple font-black text-lg">₹{Number(request.tokenAmount).toLocaleString('en-IN')}</p>
+                              </div>
+                            )}
+                            <div>
+                              <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Status</p>
+                              <span className={`inline-block text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border ${
+                                request.negotiationStatus === 'token_paid' ? 'bg-green-500/20 border-green-500/30 text-green-300' :
+                                request.negotiationStatus === 'awaiting_token_payment' ? 'bg-yellow-500/20 border-yellow-500/30 text-yellow-300' :
+                                request.negotiationStatus === 'user_countered' ? 'bg-blue-500/20 border-blue-500/30 text-blue-300' :
+                                request.negotiationStatus === 'admin_rejected' || request.negotiationStatus === 'user_rejected' ? 'bg-red-500/20 border-red-500/30 text-red-400' :
+                                'bg-brand-orange/20 border-brand-orange/30 text-brand-orange'
+                              }`}>
+                                {(request.negotiationStatus || 'admin_quoted').replace(/_/g, ' ')}
+                              </span>
+                            </div>
+                          </div>
+
+                          {request.userOffer && (
+                            <div className="bg-white/5 border border-white/10 p-3 rounded-lg">
+                              <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Your Counter Offer</p>
+                              <p className="text-white font-bold">₹{Number(request.userOffer).toLocaleString('en-IN')}</p>
+                            </div>
+                          )}
+
+                          {/* Accept / Counter / Reject Area */}
+                          {(request.negotiationStatus === 'admin_quoted' || !request.negotiationStatus || request.negotiationStatus === 'admin_rejected' || request.negotiationStatus === 'user_rejected') && (
+                            <div className="space-y-3">
+                              {/* Accept / Reject Buttons */}
+                              {(request.negotiationStatus === 'admin_quoted' || !request.negotiationStatus) && (
+                                <div className="flex gap-3">
+                                  <button
+                                    disabled={offerSubmitting === request.id}
+                                    onClick={() => acceptOffer(request.id)}
+                                    className={`flex-1 py-3.5 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-green-500/20 hover:scale-[1.01] ${
+                                      offerSubmitting === request.id ? 'opacity-50 cursor-not-allowed' : ''
+                                    }`}
+                                  >
+                                    {offerSubmitting === request.id ? 'Processing...' : '✅ Accept'}
+                                  </button>
+                                  <button
+                                    disabled={offerSubmitting === request.id}
+                                    onClick={() => rejectOffer(request.id)}
+                                    className={`flex-1 py-3.5 bg-white/5 border border-white/10 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 text-gray-400 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                                      offerSubmitting === request.id ? 'opacity-50 cursor-not-allowed' : ''
+                                    }`}
+                                  >
+                                    ❌ Reject
+                                  </button>
+                                </div>
+                              )}
+
+                              {/* Counter Offer Toggle */}
+                              {!showCounterInput[request.id] ? (
+                                <button
+                                  onClick={() => setShowCounterInput(prev => ({ ...prev, [request.id]: true }))}
+                                  className="w-full py-2.5 bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:border-brand-orange/30 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all"
+                                >
+                                  Or Submit Counter Offer
+                                </button>
+                              ) : (
+                                <div className="bg-white/5 border border-white/10 p-4 rounded-xl space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <p className="text-[9px] font-bold text-brand-orange uppercase tracking-widest">Your Counter Offer (₹)</p>
+                                    <button
+                                      onClick={() => setShowCounterInput(prev => ({ ...prev, [request.id]: false }))}
+                                      className="text-gray-500 hover:text-white text-xs transition-colors"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <input
+                                      type="number"
+                                      value={counterOfferValue[request.id] || ''}
+                                      onChange={e => setCounterOfferValue(prev => ({ ...prev, [request.id]: e.target.value }))}
+                                      placeholder="Enter your price..."
+                                      className="flex-grow bg-white/5 border border-white/10 text-white text-sm font-bold rounded-lg px-3 py-2.5 outline-none focus:border-brand-orange transition-colors"
+                                    />
+                                    <button
+                                      disabled={offerSubmitting === request.id}
+                                      onClick={() => submitCounterOffer(request.id)}
+                                      className={`px-5 py-2.5 bg-brand-orange hover:bg-brand-orange/80 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-brand-orange/20 whitespace-nowrap ${
+                                        offerSubmitting === request.id ? 'opacity-50 cursor-not-allowed' : ''
+                                      }`}
+                                    >
+                                      {offerSubmitting === request.id ? 'Sending...' : 'Send Offer'}
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Pay Token Money Button — when awaiting_token_payment */}
+                          {request.negotiationStatus === 'awaiting_token_payment' && request.tokenAmount && (
+                            <button
+                              className="w-full py-3.5 bg-gradient-to-r from-brand-purple to-brand-orange text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg hover:shadow-brand-purple/30 hover:scale-[1.01]"
+                              onClick={() => {
+                                setToastType('info' as any);
+                                setToastMessage(`Token payment of ₹${Number(request.tokenAmount).toLocaleString('en-IN')} — Payment gateway integration coming soon!`);
+                              }}
+                            >
+                              💰 Pay Token Advance — ₹{Number(request.tokenAmount).toLocaleString('en-IN')}
+                            </button>
+                          )}
+
+                          {request.negotiationStatus === 'token_paid' && (
+                            <div className="text-center py-3 bg-green-500/10 border border-green-500/20 rounded-xl">
+                              <p className="text-green-400 text-xs font-bold uppercase tracking-widest">✅ Token Paid — Build In Progress</p>
+                            </div>
+                          )}
+                        </div>
+                      ) : !request.adminNotes && (
+                        <button className="w-full py-4 bg-white/5 border border-white/10 text-center rounded-xl text-[9px] font-black uppercase tracking-widest text-gray-400 cursor-not-allowed">
+                          {request.status === 'pending' ? 'Reviewing Vision' : 
+                           request.status === 'in_progress' ? 'Engineering in Progress' : 
+                           'Build Completed'}
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -307,6 +539,14 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+      {toastMessage && (
+        <Toast
+          type={toastType}
+          title={toastType === 'success' ? 'Success' : toastType === 'error' ? 'Error' : 'Info'}
+          message={toastMessage}
+          onClose={() => setToastMessage('')}
+        />
+      )}
     </div>
   );
 }

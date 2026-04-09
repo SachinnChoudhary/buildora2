@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Bot, X, Send, User, ChevronDown, Sparkles, Lightbulb } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { PROJECTS_DB } from '@/lib/projects';
+import { useAuth } from '@/context/AuthContext';
 
 interface Message {
   role: 'user' | 'model';
@@ -79,6 +80,20 @@ export default function BuildoraBot({ currentProject: propCurrentProject }: Buil
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const [currentProject, setCurrentProject] = useState(propCurrentProject);
+  const { user } = useAuth();
+  const [isAiAllowed, setIsAiAllowed] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      import('@/services/firestore').then(({ getUserProfile }) => {
+        getUserProfile(user.uid).then(profile => {
+          setIsAiAllowed(profile?.role === 'admin' || profile?.plan === 'pro');
+        });
+      });
+    } else {
+      setIsAiAllowed(false);
+    }
+  }, [user]);
 
   // Detect project from URL if on a project page
   useEffect(() => {
@@ -137,6 +152,7 @@ export default function BuildoraBot({ currentProject: propCurrentProject }: Buil
           message: text,
           history: messages,
           projectContext: currentProject,
+          isAiAllowed,
         }),
       });
 
@@ -155,6 +171,24 @@ export default function BuildoraBot({ currentProject: propCurrentProject }: Buil
 
   const handleSuggestedQuestion = (question: string) => {
     handleSend(question);
+  };
+
+  const renderMessageText = (text: string) => {
+    return text.split('\n').map((line, lineIndex) => {
+      if (!line) return <div key={lineIndex} className="h-2"></div>;
+      
+      const parts = line.split(/(\*\*.*?\*\*)/g);
+      return (
+        <div key={lineIndex} className="mb-1 leading-relaxed">
+          {parts.map((part, partIndex) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+              return <strong key={partIndex} className="font-bold text-white tracking-wide">{part.slice(2, -2)}</strong>;
+            }
+            return <span key={partIndex}>{part}</span>;
+          })}
+        </div>
+      );
+    });
   };
 
   return (
@@ -291,7 +325,7 @@ export default function BuildoraBot({ currentProject: propCurrentProject }: Buil
                             ? 'bg-brand-purple/20 border border-brand-purple/30 text-white rounded-tr-none' 
                             : 'bg-white/10 border border-white/20 text-gray-200 rounded-tl-none'
                         }`}>
-                          {msg.parts[0].text}
+                          {msg.role === 'user' ? msg.parts[0].text : renderMessageText(msg.parts[0].text)}
                         </div>
                       </motion.div>
                     ))}

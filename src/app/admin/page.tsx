@@ -4,8 +4,9 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useFirestoreRealtime } from '@/hooks/useFirestore';
 import { getUserProfile } from '@/services/firestore';
+import { createSupabaseProject, updateSupabaseProject, deleteSupabaseProject } from '@/services/supabaseProjects';
 import AdminSkeleton from '@/components/AdminSkeleton';
-import LoadingSpinner from '@/components/LoadingSpinner';
+import Toast from '@/components/Toast';
 
 const TABS = ['Overview', 'Projects', 'Orders', 'Custom Requests', 'Users', 'Diagnostics'] as const;
 type Tab = (typeof TABS)[number];
@@ -29,12 +30,80 @@ export default function AdminPanel() {
   const [statsLoading, setStatsLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
-  // Live Subscriptions - Only enable once authorized
   // Live Subscriptions
   const { data: liveOrders } = useFirestoreRealtime('orders', [], { enabled: !!isAuthorized });
   const [liveRequests, setLiveRequests] = useState<any[]>([]);
   const { data: liveUsers } = useFirestoreRealtime('users', [], { enabled: !!isAuthorized });
   const [liveProjects, setLiveProjects] = useState<any[]>([]);
+
+  const [orderStatusFilter, setOrderStatusFilter] = useState<string>('all');
+  const [orderSearch, setOrderSearch] = useState<string>('');
+  const [requestStatusFilter, setRequestStatusFilter] = useState<string>('all');
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [isRequestEditingEnabled, setIsRequestEditingEnabled] = useState(false);
+  const [editingRequest, setEditingRequest] = useState<any>(null);
+  const [requestNotesData, setRequestNotesData] = useState('');
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+
+  const formatBudget = (budget: any) => {
+    if (!budget || String(budget).toLowerCase() === 'flexible') return 'Flexible';
+    return '₹' + String(budget).replace(/^[₹$\s]+/, '');
+  };
+
+  const saveCustomRequestUpdates = async () => {
+    if (!editingRequest) return;
+    try {
+      setLiveRequests(prev => prev.map(req => req.id === editingRequest.id ? {...req, ...editingRequest} : req));
+      const payload = { ...editingRequest };
+      
+      const res = await fetch('/api/custom-requests', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!data.success) {
+        console.error('Failed to update request details', data.error);
+        fetchCustomRequests();
+        setToastType('error');
+        setToastMessage('Failed to save details');
+      } else {
+        setToastType('success');
+        setToastMessage('Details & Commits saved successfully!');
+        setIsRequestModalOpen(false);
+      }
+    } catch (err) {
+      console.error('Error updating details', err);
+      fetchCustomRequests();
+      setToastType('error');
+      setToastMessage('An error occurred during save');
+    }
+  };
+
+  const updateCustomRequestStatus = async (id: string, newStatus: string, newNotes?: string) => {
+    try {
+      setLiveRequests(prev => prev.map(req => req.id === id ? { ...req, status: newStatus || req.status, adminNotes: newNotes !== undefined ? newNotes : req.adminNotes } : req));
+      
+      const payload: any = { id };
+      if (newStatus) payload.status = newStatus;
+      if (newNotes !== undefined) payload.adminNotes = newNotes;
+
+      const res = await fetch('/api/custom-requests', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!data.success) {
+        console.error('Failed to update status', data.error);
+        fetchCustomRequests();
+      }
+    } catch (err) {
+      console.error('Error updating status', err);
+      fetchCustomRequests();
+    }
+  };
 
   const fetchSupabaseProjects = async () => {
     try {
@@ -83,6 +152,8 @@ export default function AdminPanel() {
     thumbnailFile: null as File | null
   });
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isGeneratingDetails, setIsGeneratingDetails] = useState(false);
 
   // Order Management State
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
@@ -103,25 +174,19 @@ export default function AdminPanel() {
       if (authLoading) return;
 
       if (!user) {
-        console.log("No user found in AdminPanel, redirecting to login");
         router.push('/login?redirect=/admin');
         return;
       }
 
       try {
-        console.log("Checking admin access for:", user.uid);
         const profile = await getUserProfile(user.uid);
-        console.log("Admin check profile result:", profile);
         if (profile && profile.role === 'admin') {
-          console.log("Authorized as admin!");
           setIsAuthorized(true);
         } else {
-          console.log("Not authorized as admin. Profile role:", profile?.role);
           setIsAuthorized(false);
           router.push('/dashboard');
         }
       } catch (err: any) {
-        console.error("Authorization check failed with error:", err.message);
         setIsAuthorized(false);
         router.push('/login');
       }
@@ -149,12 +214,10 @@ export default function AdminPanel() {
     }
   }, [isAuthorized]);
 
-  // Loading state
   if (authLoading || isAuthorized === null) {
     return <AdminSkeleton />;
   }
 
-  // Final check to prevent any UI leaks
   if (isAuthorized === false) return null;
 
   const totalRevenue = stats.totalRevenue;
@@ -206,16 +269,16 @@ export default function AdminPanel() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsUploading(true);
+    setUploadProgress(0);
     try {
-      const { createSupabaseProject, updateSupabaseProject } = await import ('@/services/supabaseProjects');
-      
       const projectPayload = {
         ...formData,
         techStack: formData.techStack.split(',').map(s => (s as string).trim()).filter(Boolean),
         tags: formData.tags.split(',').map(s => (s as string).trim()).filter(Boolean),
         sourceFile: formData.sourceType === 'zip' ? formData.sourceFile : null,
         externalRepoUrl: formData.sourceType === 'link' ? formData.externalRepoUrl : '',
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        onProgress: (p: number) => setUploadProgress(p)
       };
 
       if (modalMode === 'edit' && editingId) {
@@ -224,7 +287,7 @@ export default function AdminPanel() {
         await createSupabaseProject(projectPayload);
       }
       setIsModalOpen(false);
-      await fetchSupabaseProjects(); // Real-time refresh
+      await fetchSupabaseProjects();
     } catch (err: any) {
       console.error('Error saving project to Supabase:', err);
       alert(`Failed to save: ${err.message || 'Check your Supabase configuration'}`);
@@ -233,14 +296,47 @@ export default function AdminPanel() {
     }
   };
 
+  const handleGenerateDetails = async () => {
+    if (!formData.title) return;
+    setIsGeneratingDetails(true);
+    try {
+      const res = await fetch('/api/generate-project-details', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: formData.title })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.error);
+      }
+      setFormData(prev => ({
+        ...prev,
+        domain: data.data.domain || prev.domain,
+        subtitle: data.data.subtitle || prev.subtitle,
+        description: data.data.description || prev.description,
+        techStack: data.data.techStack || prev.techStack,
+        tags: data.data.tags || prev.tags,
+        difficulty: data.data.difficulty || prev.difficulty
+      }));
+      setToastType('success');
+      setToastMessage('Details automatically generated using Gemini AI!');
+    } catch (err: any) {
+      console.error('Failed to generate details:', err);
+      setToastType('error');
+      setToastMessage(err.message || 'Failed to auto-fill details');
+    } finally {
+      setIsGeneratingDetails(false);
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this project?')) {
       try {
-        const { deleteSupabaseProject } = await import('@/services/supabaseProjects');
         await deleteSupabaseProject(id);
+        await fetchSupabaseProjects();
       } catch (err: any) {
         console.error('Error deleting project from Supabase:', err);
-        alert('Failed to delete project. You might need to check your Supabase Storage policies.');
+        alert('Failed to delete project.');
       }
     }
   };
@@ -267,6 +363,14 @@ export default function AdminPanel() {
 
   return (
     <main className="min-h-screen max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      {toastMessage && (
+        <Toast
+          type={toastType}
+          title={toastType === 'success' ? 'Success' : 'Error'}
+          message={toastMessage}
+          onClose={() => setToastMessage('')}
+        />
+      )}
       {/* Modal Backdrop */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -277,9 +381,14 @@ export default function AdminPanel() {
             </h2>
             <form onSubmit={handleSave} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+                <div className="md:col-span-2">
                   <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Title</label>
-                  <input required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-sm text-white" />
+                  <div className="flex gap-2">
+                    <input required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-sm text-white flex-1" />
+                    <button type="button" onClick={handleGenerateDetails} disabled={isGeneratingDetails || !formData.title} className="bg-brand-purple/20 text-brand-purple hover:bg-brand-purple/30 px-4 py-2 rounded-lg text-xs font-bold uppercase transition flex items-center gap-2 min-w-max disabled:opacity-50 border border-brand-purple/30">
+                      {isGeneratingDetails ? 'GENERATING...' : '✨ AUTO-FILL'}
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Domain</label>
@@ -429,7 +538,7 @@ export default function AdminPanel() {
                   {isUploading ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      UPLOADING...
+                      {uploadProgress > 0 && uploadProgress < 100 ? `UPLOADING (${uploadProgress}%)` : 'UPLOADING...'}
                     </>
                   ) : 'SAVE PROJECT'}
                 </button>
@@ -468,6 +577,295 @@ export default function AdminPanel() {
                  </button>
                </div>
              </form>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Request Detail Modal */}
+      {isRequestModalOpen && editingRequest && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setIsRequestModalOpen(false)}></div>
+          <div className="relative w-full max-w-3xl glassmorphism border border-white/10 rounded-2xl p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between mb-6">
+              <h3 className="text-2xl font-black text-white uppercase tracking-tight">Request Details</h3>
+              <button 
+                onClick={() => setIsRequestEditingEnabled(!isRequestEditingEnabled)}
+                className={`text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-lg border transition-colors ${
+                  isRequestEditingEnabled ? 'bg-brand-purple/20 text-brand-purple border-brand-purple/30' : 'bg-white/5 text-gray-400 border-white/10 hover:text-white'
+                }`}
+              >
+                {isRequestEditingEnabled ? 'Cancel Editing' : 'Edit Fields'}
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="glassmorphism p-4 border border-white/5 rounded-xl">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Display ID</p>
+                <p className="text-white font-mono text-xs">{editingRequest.displayId || editingRequest.id}</p>
+              </div>
+              <div className="glassmorphism p-4 border border-white/5 rounded-xl">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Status</p>
+                <div className="mt-1 flex flex-col items-start gap-2">
+                  <span className={`text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full border ${statusColors[editingRequest.status || 'pending']}`}>
+                    {(editingRequest.status || 'pending').replace('_', ' ')}
+                  </span>
+                  <select 
+                    value={editingRequest.status}
+                    onChange={(e) => updateCustomRequestStatus(editingRequest.id, e.target.value, undefined)}
+                    className="bg-white/5 border border-white/10 text-white text-xs rounded-lg px-3 py-1.5 outline-none focus:border-brand-purple w-full transition-colors"
+                  >
+                     <option value="pending" className="bg-[#0f1115]">Pending</option>
+                     <option value="in_progress" className="bg-[#0f1115]">In Progress</option>
+                     <option value="completed" className="bg-[#0f1115]">Completed</option>
+                     <option value="refunded" className="bg-[#0f1115]">Refunded</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="glassmorphism p-5 border border-white/5 rounded-xl space-y-4 mb-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Customer</p>
+                  {isRequestEditingEnabled ? (
+                    <input 
+                      value={editingRequest.contactName || ''} 
+                      onChange={e => setEditingRequest({...editingRequest, contactName: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 text-white text-sm font-bold rounded-lg px-3 py-2 outline-none focus:border-brand-purple transition-colors"
+                    />
+                  ) : (
+                    <p className="text-white text-sm font-bold">{editingRequest.contactName || editingRequest.userId}</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Email</p>
+                  {isRequestEditingEnabled ? (
+                    <input 
+                      value={editingRequest.email || ''} 
+                      onChange={e => setEditingRequest({...editingRequest, email: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-brand-purple transition-colors"
+                    />
+                  ) : (
+                    <p className="text-gray-300 text-xs">{editingRequest.email}</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">WhatsApp</p>
+                  {isRequestEditingEnabled ? (
+                    <input 
+                      value={editingRequest.whatsapp || ''} 
+                      onChange={e => setEditingRequest({...editingRequest, whatsapp: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-brand-purple transition-colors"
+                    />
+                  ) : (
+                    <p className="text-gray-300 text-xs mt-0.5">{editingRequest.whatsapp}</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Institution</p>
+                  {isRequestEditingEnabled ? (
+                    <input 
+                      value={editingRequest.institution || ''} 
+                      onChange={e => setEditingRequest({...editingRequest, institution: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-brand-purple transition-colors"
+                    />
+                  ) : (
+                    <p className="text-gray-300 text-xs">{editingRequest.institution || 'N/A'}</p>
+                  )}
+                </div>
+
+                <div className="col-span-2 pt-3 border-t border-white/5">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Vision / Title</p>
+                  {isRequestEditingEnabled ? (
+                    <input 
+                      value={editingRequest.title || ''} 
+                      onChange={e => setEditingRequest({...editingRequest, title: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 text-brand-purple text-sm font-bold rounded-lg px-3 py-2 outline-none focus:border-brand-purple transition-colors"
+                    />
+                  ) : (
+                    <p className="text-brand-purple text-sm font-bold">{editingRequest.title}</p>
+                  )}
+                </div>
+                <div className="col-span-2">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Core Requirements</p>
+                  {isRequestEditingEnabled ? (
+                    <textarea 
+                      value={editingRequest.requirements || ''} 
+                      onChange={e => setEditingRequest({...editingRequest, requirements: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 text-gray-300 text-sm whitespace-pre-wrap leading-relaxed rounded-lg p-3 outline-none focus:border-brand-purple transition-colors min-h-[150px] resize-y"
+                    />
+                  ) : (
+                    <p className="text-gray-300 text-sm whitespace-pre-wrap leading-relaxed bg-white/5 p-4 rounded-lg border border-white/5">{editingRequest.requirements}</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Budget / The Plan</p>
+                  {isRequestEditingEnabled ? (
+                    <input 
+                      value={editingRequest.budget || ''} 
+                      onChange={e => setEditingRequest({...editingRequest, budget: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 text-brand-orange text-sm font-bold rounded-lg px-3 py-2 outline-none focus:border-brand-purple transition-colors"
+                    />
+                  ) : (
+                    <p className="text-brand-orange text-sm font-bold">{formatBudget(editingRequest.budget)}</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Timeline</p>
+                  {isRequestEditingEnabled ? (
+                    <input 
+                      value={editingRequest.deadline || ''} 
+                      onChange={e => setEditingRequest({...editingRequest, deadline: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 text-white text-sm font-bold rounded-lg px-3 py-2 outline-none focus:border-brand-purple transition-colors"
+                    />
+                  ) : (
+                    <p className="text-white text-sm font-bold">{editingRequest.deadline || 'No deadline'}</p>
+                  )}
+                </div>
+                <div className="col-span-2">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Preferred Stack</p>
+                  {isRequestEditingEnabled ? (
+                    <input 
+                      value={editingRequest.techStack?.join(', ') || ''} 
+                      onChange={e => {
+                         const arr = e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean);
+                         setEditingRequest({...editingRequest, techStack: arr});
+                      }}
+                      className="w-full bg-white/5 border border-white/10 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-brand-purple transition-colors"
+                    />
+                  ) : (
+                    <p className="text-white text-xs">{editingRequest.techStack?.length ? editingRequest.techStack.join(', ') : 'None specified'}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Negotiation & Quotation Block */}
+            <div className="glassmorphism p-5 border border-brand-orange/30 rounded-xl space-y-4 mb-6 bg-brand-orange/5">
+              <h4 className="text-sm font-black text-brand-orange uppercase tracking-widest flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-brand-orange animate-pulse"></span> Quotation & Negotiation
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div>
+                   <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Admin Quote (₹)</p>
+                   {isRequestEditingEnabled ? (
+                     <input 
+                       type="number"
+                       value={editingRequest.adminQuote || ''} 
+                       onChange={e => setEditingRequest({...editingRequest, adminQuote: e.target.value})}
+                       placeholder="e.g. 50000"
+                       className="w-full bg-white/5 border border-white/10 text-white text-sm font-bold rounded-lg px-3 py-2 outline-none focus:border-brand-orange transition-colors"
+                     />
+                   ) : (
+                     <p className="text-white text-sm font-bold">
+                       {editingRequest.adminQuote ? `₹${Number(editingRequest.adminQuote).toLocaleString('en-IN')}` : 'Not quoted yet'}
+                     </p>
+                   )}
+                 </div>
+                 <div>
+                   <p className="text-[10px] font-bold text-brand-purple uppercase tracking-widest mb-1">Token Advance Req (₹)</p>
+                   {isRequestEditingEnabled ? (
+                     <input 
+                       type="number"
+                       value={editingRequest.tokenAmount || ''} 
+                       onChange={e => setEditingRequest({...editingRequest, tokenAmount: e.target.value})}
+                       placeholder="e.g. 5000"
+                       className="w-full bg-white/5 border border-white/10 text-brand-purple text-sm font-bold rounded-lg px-3 py-2 outline-none focus:border-brand-orange transition-colors"
+                     />
+                   ) : (
+                     <p className="text-brand-purple text-sm font-bold">
+                       {editingRequest.tokenAmount ? `₹${Number(editingRequest.tokenAmount).toLocaleString('en-IN')}` : 'Not set'}
+                     </p>
+                   )}
+                 </div>
+                 <div className="col-span-2 md:col-span-1">
+                   <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">User Counter Offer</p>
+                   <div className="flex items-center gap-2">
+                     <p className="text-white text-sm font-bold border border-white/5 bg-white/5 px-3 py-2 rounded-lg flex-grow">
+                        {editingRequest.userOffer ? `₹${Number(editingRequest.userOffer).toLocaleString('en-IN')}` : 'No counter offer'}
+                     </p>
+                     {editingRequest.userOffer && editingRequest.negotiationStatus === 'user_countered' && (
+                       <div className="flex gap-2">
+                         <button
+                           onClick={() => {
+                             if (window.confirm('Accept this user offer?')) {
+                               setEditingRequest({
+                                 ...editingRequest,
+                                 adminQuote: editingRequest.userOffer,
+                                 negotiationStatus: 'awaiting_token_payment'
+                               });
+                             }
+                           }}
+                           className="flex items-center gap-1.5 bg-green-500/10 text-green-400 px-3 py-2 rounded-lg hover:bg-green-500/20 border border-green-500/20 transition-colors text-xs font-bold uppercase tracking-widest whitespace-nowrap"
+                           title="Accept User Offer"
+                         >
+                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                           Accept
+                         </button>
+                         <button
+                           onClick={() => {
+                             if (window.confirm('Reject this user offer?')) {
+                               setEditingRequest({
+                                 ...editingRequest,
+                                 negotiationStatus: 'admin_rejected'
+                               });
+                             }
+                           }}
+                           className="flex items-center gap-1.5 bg-red-500/10 text-red-400 px-3 py-2 rounded-lg hover:bg-red-500/20 border border-red-500/20 transition-colors text-xs font-bold uppercase tracking-widest whitespace-nowrap"
+                           title="Reject User Offer"
+                         >
+                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                           Reject
+                         </button>
+                       </div>
+                     )}
+                   </div>
+                 </div>
+                 <div className="col-span-2 md:col-span-1">
+                   <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Negotiation Stage</p>
+                   {isRequestEditingEnabled ? (
+                     <select 
+                       value={editingRequest.negotiationStatus || 'pending'}
+                       onChange={e => setEditingRequest({...editingRequest, negotiationStatus: e.target.value})}
+                       className="w-full bg-white/5 border border-white/10 text-gray-300 text-sm font-bold rounded-lg px-3 py-2 outline-none focus:border-brand-orange transition-colors"
+                     >
+                        <option value="pending" className="bg-[#0f1115]">Reviewing (Pending)</option>
+                        <option value="admin_quoted" className="bg-[#0f1115]">Quote Sent to User</option>
+                        <option value="user_countered" className="bg-[#0f1115]">User Countered</option>
+                        <option value="admin_rejected" className="bg-[#0f1115]">Admin Rejected Offer</option>
+                        <option value="user_rejected" className="bg-[#0f1115]">User Rejected Quote</option>
+                        <option value="awaiting_token_payment" className="bg-[#0f1115]">Awaiting Token Payment</option>
+                        <option value="token_paid" className="bg-[#0f1115]">Token Paid (Ready to Build)</option>
+                     </select>
+                   ) : (
+                     <p className="text-gray-300 text-sm font-bold px-3 py-2 bg-white/5 rounded-lg border border-white/5 uppercase tracking-wider text-[10px]">
+                        {(editingRequest.negotiationStatus || 'pending').replace(/_/g, ' ')}
+                     </p>
+                   )}
+                 </div>
+              </div>
+            </div>
+
+            <div className="glassmorphism p-5 border border-brand-purple/30 rounded-xl space-y-4">
+              <h4 className="text-sm font-black text-brand-purple uppercase tracking-widest flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-brand-purple animate-pulse"></span> Admin Commits & Updates
+              </h4>
+              <textarea 
+                placeholder="Enter latest commit message or progress updates for the user..."
+                value={requestNotesData}
+                onChange={(e) => setRequestNotesData(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-lg p-3 outline-none focus:border-brand-purple min-h-[120px] mb-4 transition-colors resize-y"
+              ></textarea>
+              <button 
+                onClick={() => {
+                   updateCustomRequestStatus(editingRequest.id, '', requestNotesData);
+                   saveCustomRequestUpdates();
+                }}
+                className="w-full py-3 bg-brand-purple hover:bg-brand-purple/80 text-white rounded-lg text-xs font-bold uppercase tracking-widest transition-all shadow-lg shadow-brand-purple/20"
+              >
+                Save Details & Commits
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -562,7 +960,7 @@ export default function AdminPanel() {
                 </div>
                 <p className="text-gray-500 text-xs mb-1">{req.email || req.contactName}</p>
                 <div className="flex justify-between items-center mt-4 pt-4 border-t border-white/10">
-                  <span className="text-brand-orange font-bold text-sm">₹{req.budget}</span>
+                  <span className="text-brand-orange font-bold text-sm">{formatBudget(req.budget)}</span>
                   <span className="text-gray-500 text-xs">{req.createdAt ? new Date(req.createdAt).toLocaleDateString() : req.date || 'N/A'}</span>
                 </div>
               </div>
@@ -667,7 +1065,21 @@ export default function AdminPanel() {
 
       {/* ── Custom Requests tab ── */}
       {tab === 'Custom Requests' && (
-        <div className="glassmorphism rounded-2xl overflow-hidden">
+        <div className="glassmorphism p-8 border border-white/10 rounded-2xl">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-black text-white uppercase tracking-tight">Custom Requests</h2>
+            <select 
+              value={requestStatusFilter} 
+              onChange={(e) => setRequestStatusFilter(e.target.value)}
+              className="bg-white/5 border border-white/10 text-white text-xs font-bold uppercase tracking-wider rounded-lg px-4 py-2 outline-none focus:border-brand-purple transition-all"
+            >
+              <option value="all" className="bg-[#0f1115]">All Status</option>
+              <option value="pending" className="bg-[#0f1115]">Pending</option>
+              <option value="in_progress" className="bg-[#0f1115]">In Progress</option>
+              <option value="completed" className="bg-[#0f1115]">Completed</option>
+            </select>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -682,12 +1094,14 @@ export default function AdminPanel() {
                 </tr>
               </thead>
               <tbody>
-                {liveRequests.map((req: any) => (
+                {liveRequests
+                  .filter((req: any) => requestStatusFilter === 'all' || req.status === requestStatusFilter)
+                  .map((req: any) => (
                   <tr key={req.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                    <td className="p-4 text-sm font-mono text-gray-400">{req.id}</td>
+                    <td className="p-4 text-sm font-mono text-gray-400">{req.displayId || req.id}</td>
                     <td className="p-4 text-sm text-white">{req.email || req.contactName}</td>
                     <td className="p-4 text-sm text-gray-300">{req.title || req.projectTitle}</td>
-                    <td className="p-4 text-sm text-brand-orange font-bold">₹{req.budget}</td>
+                    <td className="p-4 text-sm text-brand-orange font-bold">{formatBudget(req.budget)}</td>
                     <td className="p-4">
                       <span className={`text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full border ${statusColors[req.status || 'pending']}`}>
                         {(req.status || 'pending').replace('_', ' ')}
@@ -695,13 +1109,21 @@ export default function AdminPanel() {
                     </td>
                     <td className="p-4 text-sm text-gray-500">{req.createdAt ? new Date(req.createdAt).toLocaleDateString() : req.date || 'N/A'}</td>
                     <td className="p-4 flex gap-2">
-                      <button className="text-xs text-brand-purple hover:text-white transition-colors">Assign</button>
-                      <button className="text-xs text-green-400 hover:text-green-300 transition-colors">Approve</button>
+                      <button onClick={() => { setIsRequestEditingEnabled(false); setEditingRequest(req); setRequestNotesData(req.adminNotes || ''); setIsRequestModalOpen(true); }} className="text-xs text-blue-400 hover:text-blue-300 transition-colors">Details</button>
+                      <button onClick={() => updateCustomRequestStatus(req.id, 'in_progress')} className="text-xs text-brand-purple hover:text-white transition-colors">Assign</button>
+                      <button onClick={() => updateCustomRequestStatus(req.id, 'completed')} className="text-xs text-green-400 hover:text-green-300 transition-colors">Approve</button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            {liveRequests.filter((r: any) => requestStatusFilter === 'all' || r.status === requestStatusFilter).length === 0 && (
+              <div className="text-center py-16 text-gray-600">
+                <p className="text-4xl mb-3">📝</p>
+                <p className="font-bold">No Custom Requests</p>
+                <p className="text-sm">There are no requests matching this filter.</p>
+              </div>
+            )}
           </div>
         </div>
       )}

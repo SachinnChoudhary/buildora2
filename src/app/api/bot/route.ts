@@ -1,8 +1,9 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
-const genAI = process.env.GEMINI_API_KEY 
-  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) 
+const apiKey = (process.env.GEMINI_API_KEY || "").trim();
+const genAI = apiKey 
+  ? new GoogleGenerativeAI(apiKey) 
   : null;
 
 const SYSTEM_PROMPT = `
@@ -86,12 +87,19 @@ function findPredefinedResponse(message: string): string | null {
 
 export async function POST(req: Request) {
   try {
-    const { message, history, projectContext } = await req.json();
+    const { message, history, projectContext, isAiAllowed } = await req.json();
 
     // 1. Check Predefined Knowledge first
     const predefinedAnswer = findPredefinedResponse(message);
     if (predefinedAnswer) {
       return NextResponse.json({ text: predefinedAnswer, source: 'predefined' });
+    }
+
+    if (!isAiAllowed) {
+      return NextResponse.json({ 
+        text: "I'm Buildora-Bot 🤖. My advanced AI capabilities are reserved for **Pro** members and **Admins**!\n\nUpgrade your plan to chat with me about custom logic, debugging, and architecture! However, I can still answer basic questions about Buildora projects, pricing, and features.",
+        source: 'system'
+      });
     }
 
     // 2. Fallback to Gemini if configured
@@ -102,7 +110,7 @@ export async function POST(req: Request) {
       });
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const chat = model.startChat({
       history: [
@@ -125,7 +133,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error("Buildora-Bot Error:", error);
     return NextResponse.json(
-      { error: "I encountered a technical glitch. Please try again or ask a general question." },
+      { error: "I encountered a technical glitch. Please try again or ask a general question.", details: error?.message || error?.toString() },
       { status: 500 }
     );
   }

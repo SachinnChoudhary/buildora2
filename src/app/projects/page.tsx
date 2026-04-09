@@ -129,9 +129,9 @@ export default function ProjectsPage() {
             <div className="glassmorphism rounded-2xl overflow-hidden hover:border-brand-purple/30 transition-all duration-500 flex flex-col h-full relative">
               {/* top section */}
               <div className="h-40 bg-white/[0.02] relative flex items-center justify-center border-b border-white/5 group-hover:bg-brand-purple/5 transition-colors duration-500 overflow-hidden">
-                {project.thumbnail ? (
+                {(project.thumbnail || (project as any).thumbnailUrl) ? (
                   <Image 
-                    src={project.thumbnail} 
+                    src={project.thumbnail || (project as any).thumbnailUrl} 
                     alt={project.title} 
                     fill 
                     className="object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" 

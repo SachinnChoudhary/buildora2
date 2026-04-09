@@ -14,14 +14,14 @@ export async function GET(
   if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
     try {
       const { supabase } = await import('@/lib/supabase');
+      // Note: Using .eq() + [0] instead of .single() to avoid stale cache issues
       const { data, error } = await supabase
         .from('projects')
         .select('*')
-        .eq('id', id)
-        .single();
+        .eq('id', id);
 
-      if (!error && data) {
-        return NextResponse.json({ success: true, data: mapSupabaseProject(data) });
+      if (!error && data && data.length > 0) {
+        return NextResponse.json({ success: true, data: mapSupabaseProject(data[0]) });
       }
     } catch (error) {
       console.error('Error fetching project from Supabase:', error);

@@ -2,10 +2,41 @@ import { supabase, getPublicUrl } from '@/lib/supabase';
 import { auth } from '@/lib/firebase';
 import { validate as isUuid } from 'uuid';
 
-export async function uploadToSupabaseBucket(file: File, folder: string, projectId: string) {
+export async function uploadToSupabaseBucket(file: File, folder: string, projectId: string, onProgress?: (progress: number) => void): Promise<string> {
   const fileExt = file.name.split('.').pop();
   const fileName = `${projectId}/${folder}.${fileExt}`;
   const filePath = `${fileName}`;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (onProgress && supabaseUrl && anonKey) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${supabaseUrl}/storage/v1/object/projects/${filePath}`);
+      xhr.setRequestHeader('Authorization', `Bearer ${anonKey}`);
+      xhr.setRequestHeader('apikey', anonKey);
+      xhr.setRequestHeader('x-upsert', 'true');
+      xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percentComplete = Math.round((event.loaded / event.total) * 100);
+          onProgress(percentComplete);
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(getPublicUrl(filePath));
+        } else {
+          reject(new Error(`Upload failed: ${xhr.statusText}`));
+        }
+      };
+      
+      xhr.onerror = () => reject(new Error('Network error during upload'));
+      xhr.send(file);
+    });
+  }
 
   const { error: uploadError } = await supabase.storage
     .from('projects')
@@ -27,22 +58,41 @@ export async function createSupabaseProject(projectData: any) {
   // Remove fields that shouldn't go into the database
   if ('id' in projectData) delete projectData.id;
 
-  const { sourceFile, thumbnailFile, techStack, tags, originalPrice, externalRepoUrl, repoUrl: formRepoUrl, sourceType, updatedAt, ...rest } = projectData;
+  const { sourceFile, thumbnailFile, techStack, tags, originalPrice, externalRepoUrl, repoUrl: formRepoUrl, sourceType, updatedAt, onProgress, ...rest } = projectData;
   // Clean any remaining client-only fields from rest
   if ('externalRepoUrl' in rest) delete rest.externalRepoUrl;
   if ('repoUrl' in rest) delete rest.repoUrl;
   if ('sourceType' in rest) delete rest.sourceType;
   if ('updatedAt' in rest) delete rest.updatedAt;
+  if ('onProgress' in rest) delete rest.onProgress;
 
-  // 1. Insert DB row first to get a project ID
+  // 1. Generate a UUID client-side so we can upload files BEFORE inserting the row
+  const { v4: uuidv4 } = await import('uuid');
+  const projectId = uuidv4();
+
+  // 2. Upload files first using the pre-generated project ID
+  let thumbnailUrl = '';
+  let sourceUrl = '';
+
+  if (thumbnailFile) {
+    thumbnailUrl = await uploadToSupabaseBucket(thumbnailFile, 'thumbnail', projectId);
+  }
+
+  if (sourceFile && sourceType === 'zip') {
+    sourceUrl = await uploadToSupabaseBucket(sourceFile, 'source', projectId, onProgress);
+  }
+
+  // 3. Insert DB row with all data including file URLs in a single operation
+  //    This avoids the RLS issue where UPDATE was silently failing
   const { data, error } = await supabase
     .from('projects')
     .insert([{
+      id: projectId,
       ...rest,
       owner_id: currentUser.uid,
       original_price: originalPrice || rest.price || 0,
-      thumbnail_url: null,
-      source_url: '',
+      thumbnail_url: thumbnailUrl || null,
+      source_url: sourceUrl || '',
       repo_url: formRepoUrl || externalRepoUrl || '',
       tech_stack: techStack,
       tags: tags,
@@ -52,40 +102,7 @@ export async function createSupabaseProject(projectData: any) {
     .select();
 
   if (error) throw error;
-  const project = data[0];
-  const projectId = project.id;
-
-  // 2. Upload files using the real project ID
-  let thumbnailUrl = '';
-  let sourceUrl = '';
-
-  if (thumbnailFile) {
-    thumbnailUrl = await uploadToSupabaseBucket(thumbnailFile, 'thumbnail', projectId);
-  }
-
-  if (sourceFile && sourceType === 'zip') {
-    sourceUrl = await uploadToSupabaseBucket(sourceFile, 'source', projectId);
-  }
-
-  // 3. Update the row with file URLs if any were uploaded
-  if (thumbnailUrl || sourceUrl) {
-    const updates: Record<string, string> = {};
-    if (thumbnailUrl) updates.thumbnail_url = thumbnailUrl;
-    if (sourceUrl) updates.source_url = sourceUrl;
-
-    const { error: updateError } = await supabase
-      .from('projects')
-      .update(updates)
-      .eq('id', projectId);
-
-    if (updateError) {
-      console.error('Failed to update file URLs:', updateError);
-    } else {
-      Object.assign(project, updates);
-    }
-  }
-
-  return project;
+  return data[0];
 }
 
 export async function updateSupabaseProject(projectId: string, projectData: any) {
@@ -96,7 +113,7 @@ export async function updateSupabaseProject(projectId: string, projectData: any)
   if (!currentUser) throw new Error('User must be authenticated to update a project');
 
   // Remove client-only fields from destructuring
-  const { sourceFile, thumbnailFile, techStack, tags, originalPrice, externalRepoUrl, repoUrl: _repoUrl, sourceType, updatedAt, thumbnailUrl: _thumbUrl, sourceUrl: _srcUrl, ...rest } = projectData;
+  const { sourceFile, thumbnailFile, techStack, tags, originalPrice, externalRepoUrl, repoUrl: _repoUrl, sourceType, updatedAt, thumbnailUrl: _thumbUrl, sourceUrl: _srcUrl, onProgress, ...rest } = projectData;
   // Remove any remaining client-only fields from rest
   if ('externalRepoUrl' in rest) delete rest.externalRepoUrl;
   if ('repoUrl' in rest) delete rest.repoUrl;
@@ -104,6 +121,7 @@ export async function updateSupabaseProject(projectId: string, projectData: any)
   if ('updatedAt' in rest) delete rest.updatedAt;
   if ('thumbnailUrl' in rest) delete rest.thumbnailUrl;
   if ('sourceUrl' in rest) delete rest.sourceUrl;
+  if ('onProgress' in rest) delete rest.onProgress;
   let thumbnailUrl = projectData.thumbnailUrl;
   let sourceUrl = projectData.sourceUrl || '';
   let repoUrl = projectData.repoUrl || '';
@@ -113,7 +131,7 @@ export async function updateSupabaseProject(projectId: string, projectData: any)
   }
 
   if (sourceFile && projectData.sourceType === 'zip') {
-    sourceUrl = await uploadToSupabaseBucket(sourceFile, 'source', projectId);
+    sourceUrl = await uploadToSupabaseBucket(sourceFile, 'source', projectId, onProgress);
   }
 
   const { data, error } = await supabase
