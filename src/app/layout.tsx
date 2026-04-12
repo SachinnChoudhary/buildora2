@@ -3,6 +3,8 @@ import { AuthProvider } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BuildoraBot from "@/components/BuildoraBot";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -25,6 +27,8 @@ export default function RootLayout({
           </div>
           <Footer />
           <BuildoraBot />
+          <SpeedInsights />
+          <Analytics />
         </AuthProvider>
       </body>
     </html>
